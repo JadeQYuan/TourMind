@@ -1,0 +1,43 @@
+# 发布包（docker save 产物）
+devops/dist/
+
+# 临时构建产物（构建脚本生成，docker build 后自动清理）
+backend/packages/
+frontend/dist/
+
+# 环境配置（含密钥，不入库）
+.env
+.env.local
+backend/.env
+backend/.env.local
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+*.egg-info/
+dist/
+.mypy_cache/
+.ruff_cache/
+
+# Node
+node_modules/
+frontend/dist/
+frontend/.env.local
+
+# 构建产物
+*.log
+*.tar.gz
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/settings.json
+.idea/
+
+# Uploads (runtime data)
+backend/uploads/

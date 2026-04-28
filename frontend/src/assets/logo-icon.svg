@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 44" width="44" height="44" role="img" aria-label="智游管家">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="44" y2="44" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1677ff"/>
+      <stop offset="100%" stop-color="#0ea5e9"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 圆角底板 -->
+  <rect width="44" height="44" rx="10" fill="url(#bg)"/>
+
+  <!-- 目的地图钉（右上角区域） -->
+  <path d="M27 5
+    C 22 5, 17 9, 17 14
+    C 17 20, 27 28, 27 28
+    C 27 28, 37 20, 37 14
+    C 37 9, 32 5, 27 5 Z"
+    fill="white"/>
+  <!-- 图钉内圆（显示渐变背景色） -->
+  <circle cx="27" cy="13.5" r="4.5" fill="url(#bg)"/>
+
+  <!-- 路线曲线：从出发点到图钉钉尖 -->
+  <path d="M9 33 C9 22, 19 25, 27 28"
+    stroke="white" stroke-width="2.2" fill="none"
+    stroke-linecap="round" opacity="0.85"/>
+
+  <!-- 出发点 -->
+  <circle cx="9" cy="35.5" r="3.2" fill="white" opacity="0.95"/>
+</svg>
