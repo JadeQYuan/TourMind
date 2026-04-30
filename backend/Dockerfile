@@ -1,8 +1,8 @@
-FROM python:3.12-slim
+FROM python:3.10-slim
 
 WORKDIR /app
 
-# 依赖由构建脚本在 python:3.12-slim 容器内预装（确保 Linux 平台兼容）
+# 依赖由构建脚本在 python:3.10-slim 容器内预装（确保 Linux 平台兼容）
 COPY packages/ /app/packages/
 ENV PYTHONPATH=/app/packages
 

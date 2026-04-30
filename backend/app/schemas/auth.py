@@ -4,7 +4,7 @@ import re
 
 
 class LoginRequest(BaseModel):
-    username: str   # 手机号 / 工号 / 用户名
+    username: str   # 手机号 / 工号
     password: str
     remember_me: bool = False
 

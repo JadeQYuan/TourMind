@@ -82,11 +82,11 @@ async def list_contracts(
 
 @router.post("", response_model=ResponseModel)
 async def create_contract(request: Request, body: ContractCreate, db: DBDep, user: CurrentUser):
-        # 参数校验
-        if not body.customer_order_id:
-            raise HTTPException(status_code=422, detail="customer_order_id 必填")
-        if not body.party_a or not body.party_a_phone or not body.party_b or not body.party_b_phone:
-            raise HTTPException(status_code=422, detail="甲乙方及联系方式必填")
+    # 参数校验
+    if not body.customer_order_id:
+        raise HTTPException(status_code=422, detail="customer_order_id 必填")
+    if not body.party_a or not body.party_a_phone or not body.party_b or not body.party_b_phone:
+        raise HTTPException(status_code=422, detail="甲乙方及联系方式必填")
     # Auto-populate from CustomerOrder if provided
     customer_name = ""
     customer_phone = ""
@@ -210,11 +210,11 @@ async def get_contract(contract_id: int, db: DBDep, _: CurrentUser):
 
 @router.put("/{contract_id}", response_model=ResponseModel)
 async def update_contract(request: Request, contract_id: int, body: ContractUpdate, db: DBDep, user: CurrentUser):
-        # 参数校验
-        if not body.party_a or not body.party_a_phone or not body.party_b or not body.party_b_phone:
-            raise HTTPException(status_code=422, detail="甲乙方及联系方式必填")
-        if not contract.customer_order_id:
-            raise HTTPException(status_code=422, detail="customer_order_id 必填")
+    # 参数校验
+    if not body.party_a or not body.party_a_phone or not body.party_b or not body.party_b_phone:
+        raise HTTPException(status_code=422, detail="甲乙方及联系方式必填")
+    if not contract.customer_order_id:
+        raise HTTPException(status_code=422, detail="customer_order_id 必填")
     contract = await _get_contract(contract_id, db)
     if contract.status not in ("pending_sign",):
         raise HTTPException(status_code=400, detail="仅待签署状态可编辑")

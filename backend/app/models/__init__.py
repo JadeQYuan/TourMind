@@ -24,15 +24,3 @@ __all__ = [
     "Bill",
     "AuditLog",
 ]
-    "Supplier",
-    "Account",
-    "Product",
-    "Itinerary",
-    "ItineraryDay",
-    "ItineraryAttachment",
-    "Order",
-    "OrderAttachment",
-    "Contract",
-    "ContractDay",
-    "Bill",
-]

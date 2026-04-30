@@ -86,8 +86,27 @@ async def create_order(body: OrderCreate, db: DBDep, user: CurrentUser, request:
     if body.price is not None and body.cost is not None:
         profit = body.price - body.cost
 
+    # 默认值逻辑
+    values = body.model_dump()
+    today = date.today()
+    if not values.get("deposit_due_date"):
+        values["deposit_due_date"] = today
+    if not values.get("balance_due_date"):
+        # 若有 travel_date 和 days 字段
+        travel_date = values.get("travel_date")
+        days = values.get("days")
+        if travel_date and days:
+            values["balance_due_date"] = travel_date + timedelta(days=days - 1)
+        else:
+            values["balance_due_date"] = today
+    if values.get("balance_amount") is None:
+        price = values.get("price")
+        deposit = values.get("deposit")
+        if price is not None and deposit is not None:
+            values["balance_amount"] = price - deposit
+
     order = CustomerOrder(
-        **body.model_dump(),
+        **values,
         order_no=order_no,
         profit=profit,
         status="pending_deposit",
@@ -114,7 +133,25 @@ async def update_order(order_id: int, body: OrderUpdate, db: DBDep, user: Curren
     if not order:
         raise HTTPException(status_code=404, detail="订单不存在")
 
-    for field, value in body.model_dump(exclude_unset=True).items():
+    update_values = body.model_dump(exclude_unset=True)
+    # 默认值逻辑
+    today = date.today()
+    if "deposit_due_date" in update_values and not update_values["deposit_due_date"]:
+        update_values["deposit_due_date"] = today
+    if "balance_due_date" in update_values and not update_values["balance_due_date"]:
+        travel_date = update_values.get("travel_date", order.travel_date)
+        days = update_values.get("days", order.days)
+        if travel_date and days:
+            update_values["balance_due_date"] = travel_date + timedelta(days=days - 1)
+        else:
+            update_values["balance_due_date"] = today
+    if "balance_amount" in update_values and update_values["balance_amount"] is None:
+        price = update_values.get("price", order.price)
+        deposit = update_values.get("deposit", order.deposit)
+        if price is not None and deposit is not None:
+            update_values["balance_amount"] = price - deposit
+
+    for field, value in update_values.items():
         setattr(order, field, value)
     if order.price is not None and order.cost is not None:
         order.profit = order.price - order.cost

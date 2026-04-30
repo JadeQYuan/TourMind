@@ -38,6 +38,9 @@ class CustomerOrder(Base):
     # 财务信息
     price: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
     deposit: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
+    deposit_due_date: Mapped[Date | None] = mapped_column(Date, nullable=True, comment="定金到账日期")
+    balance_amount: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True, comment="尾款金额")
+    balance_due_date: Mapped[Date | None] = mapped_column(Date, nullable=True, comment="尾款到账日期")
 
     # 关联供应商（可选，SET NULL on delete）
     supplier_id: Mapped[int | None] = mapped_column(

@@ -21,6 +21,9 @@ class OrderCreate(BaseModel):
     supplier_name: Optional[str] = None
     cost: Optional[Decimal] = None
     remarks: Optional[str] = None
+    deposit_due_date: Optional[date] = None
+    balance_amount: Optional[Decimal] = None
+    balance_due_date: Optional[date] = None
 
 
 class OrderUpdate(BaseModel):
@@ -37,6 +40,9 @@ class OrderUpdate(BaseModel):
     supplier_name: Optional[str] = None
     cost: Optional[Decimal] = None
     remarks: Optional[str] = None
+    deposit_due_date: Optional[date] = None
+    balance_amount: Optional[Decimal] = None
+    balance_due_date: Optional[date] = None
 
 
 class OrderStatusUpdate(BaseModel):
@@ -58,6 +64,9 @@ class OrderListItem(BaseModel):
     cost: Optional[Decimal]
     profit: Optional[Decimal]
     status: str
+    deposit_due_date: Optional[date]
+    balance_amount: Optional[Decimal]
+    balance_due_date: Optional[date]
     created_at: datetime
 
     model_config = {"from_attributes": True}

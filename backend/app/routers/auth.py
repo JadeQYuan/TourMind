@@ -44,13 +44,12 @@ def _clear_fail(account: str) -> None:
 async def login(body: LoginRequest, db: DBDep):
     _check_lock(body.username)
 
-    # 支持用户名 / 手机号 / 工号 登录
+    # 支持工号 / 手机号登录
     result = await db.execute(
         select(User).where(
             or_(
-                User.username == body.username,
+                User.job_number == body.username,
                 User.phone == body.username,
-                User.employee_id == body.username,
             )
         )
     )
