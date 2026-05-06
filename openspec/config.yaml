@@ -55,33 +55,6 @@ context: |
   | `user` | 用户 | `views/user/`, `api/user.ts`, `mock/user.ts` | 系统用户，角色：admin / operator |
   | `dashboard` | 看板 | `views/dashboard/` | 统计概览，使用 ECharts |
 
-  ## Spec 命名规范
-
-  Spec 名称使用 `<分组>-<模块>-<功能>` 格式（kebab-case）：
-
-  | 分组前缀 | 含义 | 示例 |
-  |---------|------|------|
-  | `000-` | 全局/基础设施 | `000-global`、`000-auth` |
-  | `001-base-` | 基础数据模块 | `001-base-02-product` |
-  | `002-biz-` | 核心业务模块 | `002-biz-02-itinerary-form` |
-  | `003-ops-` | 运营/后台模块 | `003-ops-01-audit` |
-
-  ## 现有 Specs 索引
-
-  **全局基础设施**：`000-global`（通用 UI、移动端、Mock 防御）、`000-auth`（密码修改、角色权限）
-
-  **基础数据**：`001-base-01-user`（占位）、`001-base-02-product`（产品模板、天数联动）、`001-base-03-supplier`（占位）、`001-base-04-account`（占位）
-
-  **业务模块 - 订单**：`002-biz-01-order`（表单校验、状态由账单推进）
-
-  **业务模块 - 行程**：`002-biz-02-itinerary-form`（表单 UX、模板填充、travelers 字段）、`002-biz-02-itinerary-list`（查看抽屉、编辑加载、状态操作）、`002-biz-02-itinerary-status`（撤销完成、分享码自动生成）
-
-  **业务模块 - 合同**：`002-biz-03-contract-creation`（从订单创建、产品预填）、`002-biz-03-contract-status`（三状态工作流、标签显示）、`002-biz-03-contract-detail`（编辑、详情、签署页）
-
-  **业务模块 - 账单**：`002-biz-04-bill`（支出关联订单/供应商、状态推进）
-
-  **运营后台**：`003-ops-01-audit`（占位）
-
   ## 编码约定
 
   - 列表页统一采用"桌面端 Table + 移动端 Card"双视图模式，响应式切换（breakpoint: 768px）
@@ -98,8 +71,10 @@ rules:
     - 保持简洁，Why / What Changes / Impact 三段结构
     - 在 Impact 中注明涉及的业务模块
   spec:
-    - Spec 名称遵循 `<模块前缀>-<功能描述>` 命名规范
+    - 使用中文撰写
     - 每个 Requirement 须有至少一个 Scenario 用于验收
+    - 场景描述须包含 Given / When / Then 三部分，且明确输入输出
+    - 需求变更须明确涉及的业务模块和具体文件路径
   tasks:
     - 使用中文撰写
     - 每个 task 独立可执行，明确指出要修改的文件路径（含模块目录）

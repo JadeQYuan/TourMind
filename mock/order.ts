@@ -39,6 +39,19 @@ export default [
     url: '/api/v1/orders',
     method: 'post',
     response: ({ body }: any) => {
+      // 默认值逻辑
+      const today = new Date().toISOString().slice(0, 10)
+      let deposit_due_date = body.deposit_due_date || today
+      let balance_due_date = body.balance_due_date
+      if (!balance_due_date && body.travel_date && body.days) {
+        const d = new Date(body.travel_date)
+        d.setDate(d.getDate() + Number(body.days) - 1)
+        balance_due_date = d.toISOString().slice(0, 10)
+      }
+      let balance_amount = body.balance_amount
+      if (balance_amount == null && body.price != null && body.deposit != null) {
+        balance_amount = Number(body.price) - Number(body.deposit)
+      }
       const item = {
         ...body,
         id: nextId++,
@@ -46,6 +59,9 @@ export default [
         profit: body.price && body.cost ? body.price - body.cost : null,
         status: 'pending_deposit',
         created_at: new Date().toISOString(),
+        deposit_due_date,
+        balance_due_date,
+        balance_amount,
       }
       orders.push(item)
       return ok(item)
@@ -58,12 +74,28 @@ export default [
       if (!params?.id) return { code: 400, message: '参数错误' }
       const idx = orders.findIndex(o => o.id === Number(params.id))
       if (idx === -1) return { code: 404, message: '不存在' }
+      // 默认值逻辑
+      const today = new Date().toISOString().slice(0, 10)
+      let deposit_due_date = body.deposit_due_date ?? orders[idx].deposit_due_date ?? today
+      let balance_due_date = body.balance_due_date ?? orders[idx].balance_due_date
+      if (!balance_due_date && (body.travel_date ?? orders[idx].travel_date) && (body.days ?? orders[idx].days)) {
+        const d = new Date(body.travel_date ?? orders[idx].travel_date)
+        d.setDate(d.getDate() + Number(body.days ?? orders[idx].days) - 1)
+        balance_due_date = d.toISOString().slice(0, 10)
+      }
+      let balance_amount = body.balance_amount ?? orders[idx].balance_amount
+      if (balance_amount == null && (body.price ?? orders[idx].price) != null && (body.deposit ?? orders[idx].deposit) != null) {
+        balance_amount = Number(body.price ?? orders[idx].price) - Number(body.deposit ?? orders[idx].deposit)
+      }
       const updated = {
         ...orders[idx],
         ...body,
         profit: (body.price ?? orders[idx].price) && (body.cost ?? orders[idx].cost)
           ? (body.price ?? orders[idx].price) - (body.cost ?? orders[idx].cost)
           : null,
+        deposit_due_date,
+        balance_due_date,
+        balance_amount,
       }
       orders[idx] = updated
       return ok(orders[idx])

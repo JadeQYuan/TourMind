@@ -321,6 +321,9 @@ function resetMobileFilter() {
               {{ drawerViewData.deposit != null ? `¥${drawerViewData.deposit.toLocaleString()}` : '-' }}
             </a-descriptions-item>
             <a-descriptions-item label="供应商">{{ drawerViewData.supplier_name ?? '-' }}</a-descriptions-item>
+            <a-descriptions-item label="定金到账日期">{{ drawerViewData.deposit_due_date ?? '-' }}</a-descriptions-item>
+            <a-descriptions-item label="尾款金额">{{ drawerViewData.balance_amount != null ? `¥${drawerViewData.balance_amount.toLocaleString()}` : '-' }}</a-descriptions-item>
+            <a-descriptions-item label="尾款到账日期">{{ drawerViewData.balance_due_date ?? '-' }}</a-descriptions-item>
             <a-descriptions-item label="成本">
               {{ drawerViewData.cost != null ? `¥${drawerViewData.cost.toLocaleString()}` : '-' }}
             </a-descriptions-item>
@@ -345,6 +348,11 @@ function resetMobileFilter() {
       @close="drawerOpen = false"
     >
       <a-form layout="vertical">
+        <a-form-item label="产品" required>
+          <a-select v-model:value="form.product_id" placeholder="请选择产品" allow-clear style="width:100%" @change="onProductChange">
+            <a-select-option v-for="p in products" :key="p.id" :value="p.id">{{ p.name }}</a-select-option>
+          </a-select>
+        </a-form-item>
         <a-row :gutter="12">
           <a-col :span="isMobile ? 24 : 12">
             <a-form-item label="客户姓名" required>
@@ -359,12 +367,29 @@ function resetMobileFilter() {
         </a-row>
         <a-row :gutter="12">
           <a-col :span="isMobile ? 24 : 12">
-            <a-form-item label="产品" required>
-              <a-select v-model:value="form.product_id" placeholder="请选择产品" allow-clear style="width:100%" @change="onProductChange">
-                <a-select-option v-for="p in products" :key="p.id" :value="p.id">{{ p.name }}</a-select-option>
-              </a-select>
+            <a-form-item label="出行日期" required>
+              <a-date-picker v-model:value="form.travel_date" value-format="YYYY-MM-DD" style="width:100%" />
             </a-form-item>
           </a-col>
+          <a-col :span="isMobile ? 24 : 12">
+            <a-form-item label="人数" required>
+              <a-input-number v-model:value="form.people_count" :min="1" style="width:100%" />
+            </a-form-item>
+          </a-col>
+        </a-row>
+        <a-row :gutter="12">
+          <a-col :span="isMobile ? 24 : 12">
+            <a-form-item label="天数">
+              <a-input-number v-model:value="form.days" :min="1" style="width:100%" />
+            </a-form-item>
+          </a-col>
+          <a-col :span="isMobile ? 24 : 12">
+            <a-form-item label="销售价格(元)" required>
+              <a-input-number v-model:value="form.price" :min="0" :precision="0" style="width:100%" @change="updateBalanceAmount" />
+            </a-form-item>
+          </a-col>
+        </a-row>
+        <a-row :gutter="12">
           <a-col :span="isMobile ? 24 : 12">
             <a-form-item label="供应商" required>
               <a-select v-model:value="form.supplier_id" placeholder="请选择供应商" allow-clear style="width:100%" @change="onSupplierChange">
@@ -372,33 +397,33 @@ function resetMobileFilter() {
               </a-select>
             </a-form-item>
           </a-col>
-        </a-row>
-        <a-row :gutter="12">
           <a-col :span="isMobile ? 24 : 12">
-            <a-form-item label="出行日期" required>
-              <a-date-picker v-model:value="form.travel_date" value-format="YYYY-MM-DD" style="width:100%" />
-            </a-form-item>
-          </a-col>
-          <a-col :span="isMobile ? 24 : 12">
-            <a-form-item label="天数">
-              <a-input-number v-model:value="form.days" :min="1" style="width:100%" />
-            </a-form-item>
-          </a-col>
-        </a-row>
-        <a-row :gutter="12">
-          <a-col :span="isMobile ? 24 : 8">
-            <a-form-item label="销售价格(元)" required>
-              <a-input-number v-model:value="form.price" :min="0" :precision="0" style="width:100%" />
-            </a-form-item>
-          </a-col>
-          <a-col :span="isMobile ? 24 : 8">
-            <a-form-item label="定金(元)">
-              <a-input-number v-model:value="form.deposit" :min="0" :precision="0" style="width:100%" />
-            </a-form-item>
-          </a-col>
-          <a-col :span="isMobile ? 24 : 8">
             <a-form-item label="成本(元)">
               <a-input-number v-model:value="form.cost" :min="0" :precision="0" style="width:100%" />
+            </a-form-item>
+          </a-col>
+        </a-row>
+        <a-row :gutter="12">
+          <a-col :span="isMobile ? 24 : 12">
+            <a-form-item label="定金(元)">
+              <a-input-number v-model:value="form.deposit" :min="0" :precision="0" style="width:100%" @change="updateBalanceAmount" />
+            </a-form-item>
+          </a-col>
+          <a-col :span="isMobile ? 24 : 12">
+            <a-form-item label="定金到账日期">
+              <a-date-picker v-model:value="form.deposit_due_date" value-format="YYYY-MM-DD" style="width:100%" @change="onDepositDueDateChange" />
+            </a-form-item>
+          </a-col>
+        </a-row>
+        <a-row :gutter="12">
+          <a-col :span="isMobile ? 24 : 12">
+            <a-form-item label="尾款(元)">
+              <a-input-number v-model:value="form.balance_amount" :min="0" :precision="0" style="width:100%" :placeholder="balanceAmountPlaceholder" />
+            </a-form-item>
+          </a-col>
+          <a-col :span="isMobile ? 24 : 12">
+            <a-form-item label="尾款到账日期">
+              <a-date-picker v-model:value="form.balance_due_date" value-format="YYYY-MM-DD" style="width:100%" :placeholder="balanceDueDatePlaceholder" />
             </a-form-item>
           </a-col>
         </a-row>

@@ -8,23 +8,22 @@ UserRole = Literal["system_admin", "admin", "assistant"]
 
 class UserCreate(BaseModel):
     name: str
-    phone: str | None = None
+    phone: str
     role: UserRole = "assistant"
-    # job_number 由后端自动生成，前端无需传递
+
 
 
 class UserUpdate(BaseModel):
     name: str | None = None
-    phone: str | None = None
+    # 手机号不可编辑
     role: UserRole | None = None
     is_active: bool | None = None
 
 
 class UserOut(BaseModel):
     id: int
-    job_number: str
     name: str
-    phone: str | None
+    phone: str
     role: str
     is_active: bool
     must_change_password: bool

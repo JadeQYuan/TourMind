@@ -8,7 +8,8 @@ export default defineConfig(({ command }) => ({
     vue(),
     viteMockServe({
       mockPath: '../mock',
-      enable: command === 'serve',
+      // enable: command === 'serve',
+      enable: false,
     }),
   ],
   resolve: {

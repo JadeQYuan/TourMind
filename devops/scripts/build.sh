@@ -58,14 +58,14 @@ npm ci --prefer-offline
 npm run build
 ok "前端编译完成 → frontend/dist/"
 
-# ---------- 后端依赖（在 python:3.12-slim 容器内安装，确保 Linux 平台兼容性）----------
+# ---------- 后端依赖（在 python:3.10-slim 容器内安装，确保 Linux 平台兼容性）----------
 log "安装后端依赖..."
 BACKEND_PKGS="${ROOT}/backend/packages"
 rm -rf "${BACKEND_PKGS}"
 docker run --rm \
     -v "${ROOT}/backend/requirements.txt:/requirements.txt:ro" \
     -v "${BACKEND_PKGS}:/packages" \
-    python:3.12-slim \
+    python:3.10-slim \
     pip install --no-cache-dir --target /packages -r /requirements.txt
 ok "后端依赖安装完成"
 

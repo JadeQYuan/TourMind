@@ -11,7 +11,7 @@ const router = useRouter()
 const route = useRoute()
 
 // ── Login form ────────────────────────────────────────────────────
-const form = reactive({ username: '', password: '', rememberMe: false })
+const form = reactive({ phone: '', password: '', rememberMe: false })
 const loading = ref(false)
 
 // ── Change-password step ──────────────────────────────────────────
@@ -20,13 +20,13 @@ const cpForm = reactive({ oldPassword: '', newPassword: '', confirmPassword: '' 
 const cpLoading = ref(false)
 
 async function handleLogin() {
-  if (!form.username || !form.password) {
-    message.warning('请输入账号和密码')
+  if (!form.phone || !form.password) {
+    message.warning('请输入手机号和密码')
     return
   }
   loading.value = true
   try {
-    const result = await auth.login(form.username, form.password, form.rememberMe)
+    const result = await auth.login(form.phone, form.password, form.rememberMe)
     if (result?.must_change_password) {
       // Show inline password-change step
       cpForm.oldPassword = form.password
@@ -94,7 +94,7 @@ async function handleChangePassword() {
     <a-card v-else class="login-card">
       <a-form :model="form" layout="vertical">
         <a-form-item label="账号" required>
-          <a-input v-model:value="form.username" placeholder="用户名 / 手机号 / 工号" size="large" />
+          <a-input v-model:value="form.username" placeholder="工号 / 手机号" size="large" />
         </a-form-item>
         <a-form-item label="密码" required>
           <a-input-password v-model:value="form.password" size="large" @keyup.enter="handleLogin" />

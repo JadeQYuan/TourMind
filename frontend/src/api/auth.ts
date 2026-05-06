@@ -15,9 +15,9 @@ export interface LoginResponse {
 }
 
 export const authApi = {
-  login: (username: string, password: string, rememberMe = false) =>
+  login: (phone: string, password: string, rememberMe = false) =>
     http.post<any, { data: LoginResponse }>('/auth/login', {
-      username,
+      username: phone,
       password,
       remember_me: rememberMe,
     }),

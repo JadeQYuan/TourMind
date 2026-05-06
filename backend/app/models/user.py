@@ -7,9 +7,8 @@ class User(Base):
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    job_number: Mapped[str] = mapped_column(String(6), unique=True, nullable=False, comment="工号，6位数字，唯一且不可编辑")
     name: Mapped[str] = mapped_column(String(100), nullable=False)
-    phone: Mapped[str | None] = mapped_column(String(20), unique=True, nullable=True)
+    phone: Mapped[str] = mapped_column(String(20), unique=True, nullable=False)
     # employee_id 字段移除，统一用 job_number
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     # system_admin / admin / assistant

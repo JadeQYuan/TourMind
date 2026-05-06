@@ -44,14 +44,9 @@ def _clear_fail(account: str) -> None:
 async def login(body: LoginRequest, db: DBDep):
     _check_lock(body.username)
 
-    # 支持工号 / 手机号登录
+    # 仅支持手机号登录
     result = await db.execute(
-        select(User).where(
-            or_(
-                User.job_number == body.username,
-                User.phone == body.username,
-            )
-        )
+        select(User).where(User.phone == body.username)
     )
     user = result.scalar_one_or_none()
 

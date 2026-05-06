@@ -63,8 +63,6 @@ const STATUS_COLOR: Record<string, string> = {
 const STATUS_LABEL: Record<string, string> = {
   pending_sign: '待签署',
   signed: '已签署',
-  in_progress: '进行中',
-  completed: '已完成',
   cancelled: '已取消',
 }
 
@@ -274,7 +272,16 @@ onMounted(load)
       :destroy-on-close="true"
       @close="drawerOpen = false"
     >
-      <ContractCreateForm @saved="(id) => { drawerOpen = false; router.push(`/contracts/${id}`) }" @cancel="drawerOpen = false" />
+      <ContractCreateForm ref="contractCreateForm"
+        @saved="(id) => { drawerOpen = false; router.push(`/contracts/${id}`) }"
+        @cancel="drawerOpen = false"
+      />
+      <template #footer>
+        <a-space style="width:100%;justify-content:flex-end">
+          <a-button @click="drawerOpen = false">取消</a-button>
+          <a-button type="primary" @click="contractCreateForm?.save()">创建合同</a-button>
+        </a-space>
+      </template>
     </a-drawer>
 
     <!-- 编辑合同抽屉 -->
@@ -293,11 +300,10 @@ onMounted(load)
         </a-space>
       </template>
       <ContractCreateForm
-        ref="contractEditForm"
-        :editId="editId"
-        :showFooter="false"
-        @saved="() => { editDrawerOpen = false; load() }"
-        @cancel="editDrawerOpen = false"
+          ref="contractEditForm"
+          :editId="editId"
+          @saved="() => { editDrawerOpen = false; load() }"
+          @cancel="editDrawerOpen = false"
       />
     </a-drawer>
   </div>

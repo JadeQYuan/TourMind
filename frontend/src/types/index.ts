@@ -3,10 +3,9 @@ export type UserRole = 'system_admin' | 'admin' | 'assistant'
 
 export interface UserInfo {
   id: number
-  username: string
-  full_name: string
+  job_number: string
+  name: string
   phone: string | null
-  employee_id: string | null
   role: UserRole
   is_active: boolean
   must_change_password: boolean
@@ -82,6 +81,12 @@ export interface Order {
   people_count: number
   price: number
   deposit: number | null
+  /** 定金到账日期，默认当前日期 */
+  deposit_due_date: string | null
+  /** 尾款金额，默认 price - deposit */
+  balance_amount: number | null
+  /** 尾款到账日期，默认行程结束日期 */
+  balance_due_date: string | null
   supplier_id: number | null
   supplier_name: string | null
   cost: number | null

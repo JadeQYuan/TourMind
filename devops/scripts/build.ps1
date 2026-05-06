@@ -55,7 +55,7 @@ try {
     Pop-Location
     Ok "前端编译完成 → frontend/dist/"
 
-    # ---------- 后端依赖（在 python:3.12-slim 容器内安装，确保 Linux 平台兼容性）----------
+    # ---------- 后端依赖（在 python:3.10-slim 容器内安装，确保 Linux 平台兼容性）----------
     Log "安装后端依赖..."
     Remove-Item -Recurse -Force $BACKEND_PKGS -ErrorAction SilentlyContinue
     New-Item -ItemType Directory -Force -Path $BACKEND_PKGS | Out-Null
@@ -65,7 +65,7 @@ try {
     docker run --rm `
         -v "${reqPath}:/requirements.txt:ro" `
         -v "${pkgsPath}:/packages" `
-        python:3.12-slim `
+        python:3.10-slim `
         pip install --no-cache-dir --target /packages -r /requirements.txt
     if ($LASTEXITCODE -ne 0) { Err "后端依赖安装失败" }
     Ok "后端依赖安装完成"

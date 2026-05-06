@@ -31,19 +31,24 @@ onMounted(fetchList)
 async function fetchList() {
   loading.value = true
   const res = await userApi.list(query)
-  users.value = res.data?.items ?? res.data ?? []
-  total.value = res.data?.total ?? users.value.length
+  let list = res.data?.items ?? res.data ?? []
+  // 前端兜底过滤：管理员不可见系统管理员
+  if (auth.user?.role === 'admin') {
+    list = list.filter(u => u.role !== 'system_admin')
+  }
+  users.value = list
+  total.value = res.data?.total ?? list.length
   loading.value = false
 }
 
 function openCreate() { editingId.value = null; form.value = { role: 'assistant', is_active: true }; modalOpen.value = true }
 function openEdit(u: UserInfo) {
   if (u.role === 'system_admin') { message.warning('系统管理员不可编辑'); return }
-  editingId.value = u.id; form.value = { ...u, phone: u.phone ?? undefined, employee_id: u.employee_id ?? undefined }; modalOpen.value = true
+  editingId.value = u.id; form.value = { ...u, phone: u.phone ?? undefined }; modalOpen.value = true
 }
 
 async function save() {
-  if (!form.value.full_name?.trim()) { message.error('请输入姓名'); return }
+  if (!form.value.name?.trim()) { message.error('请输入姓名'); return }
   if (!form.value.phone?.trim()) { message.error('请输入手机号'); return }
   if (editingId.value) {
     await userApi.update(editingId.value, form.value)
@@ -79,7 +84,7 @@ async function openViewDrawer(id: number) {
 async function resetPwd(u: UserInfo) {
   if (u.role === 'system_admin') { message.warning('系统管理员不可重置密码'); return }
   Modal.confirm({
-    title: `确认重置 ${u.full_name} 的密码？`,
+    title: `确认重置 ${u.name} 的密码？`,
     onOk: async () => {
       const res = await userApi.resetPassword(u.id)
       const pwd = res.data?.generated_password
@@ -132,9 +137,8 @@ function resetMobileFilter() {
 
 const columns = [
   { title: '', key: '_seq', width: 55, align: 'center' as const },
-  { title: '姓名', dataIndex: 'full_name', width: 100 },
+  { title: '姓名', dataIndex: 'name', width: 100 },
   { title: '手机号', dataIndex: 'phone', width: 140 },
-  { title: '工号', dataIndex: 'employee_id', width: 100 },
   { title: '角色', key: 'role', width: 110 },
   { title: '状态', key: 'is_active', width: 80, align: 'center' },
   { title: '最后登录', dataIndex: 'last_login_at', width: 160, customRender: ({ text }: any) => text ? text.slice(0, 16).replace('T', ' ') : '-' },
@@ -182,7 +186,7 @@ const columns = [
               <a-card size="small" style="border-radius:8px;border:1px solid #f0f0f0">
                 <div style="display:flex;justify-content:space-between;align-items:flex-start">
                   <div>
-                    <div style="font-weight:600;color:#111827;font-size:14px">{{ record.full_name }}</div>
+                    <div style="font-weight:600;color:#111827;font-size:14px">{{ record.name }}</div>
                     <div style="font-size:13px;color:#6b7280;margin-top:2px">{{ record.phone }}</div>
                     <span style="margin-top:4px;display:inline-block">
                       <a-tag :color="ROLE_COLOR[record.role]" style="margin:0">{{ ROLES[record.role] ?? record.role }}</a-tag>
@@ -269,10 +273,8 @@ const columns = [
       <a-spin :spinning="drawerLoading">
         <template v-if="drawerViewData">
           <a-descriptions :column="1" bordered size="small">
-            <a-descriptions-item label="姓名">{{ drawerViewData.full_name }}</a-descriptions-item>
-            <a-descriptions-item label="用户名">{{ drawerViewData.username }}</a-descriptions-item>
+            <a-descriptions-item label="姓名">{{ drawerViewData.name }}</a-descriptions-item>
             <a-descriptions-item label="手机号">{{ drawerViewData.phone ?? '-' }}</a-descriptions-item>
-            <a-descriptions-item label="工号">{{ drawerViewData.employee_id ?? '-' }}</a-descriptions-item>
             <a-descriptions-item label="角色">
               <a-tag :color="ROLE_COLOR[drawerViewData.role]">{{ ROLES[drawerViewData.role] ?? drawerViewData.role }}</a-tag>
             </a-descriptions-item>
@@ -294,12 +296,13 @@ const columns = [
       @close="modalOpen = false"
     >
       <a-form layout="vertical">
-        <a-form-item label="姓名" required><a-input v-model:value="form.full_name" placeholder="请输入姓名" /></a-form-item>
-        <a-form-item label="手机号" required><a-input v-model:value="form.phone" placeholder="请输入手机号" /></a-form-item>
-        <a-form-item label="工号"><a-input v-model:value="form.employee_id" /></a-form-item>
+        <a-form-item label="姓名" required><a-input v-model:value="form.name" placeholder="请输入姓名" /></a-form-item>
+        <a-form-item label="手机号" required>
+          <a-input v-model:value="form.phone" placeholder="请输入手机号" :disabled="!!editingId" />
+        </a-form-item>
         <a-form-item label="角色">
           <a-select v-model:value="form.role" style="width:100%">
-            <a-select-option v-if="auth.isSystemAdmin" value="system_admin">系统管理员</a-select-option>
+            <a-select-option v-if="auth.user?.role === 'system_admin'" value="system_admin">系统管理员</a-select-option>
             <a-select-option value="admin">管理员</a-select-option>
             <a-select-option value="assistant">助理</a-select-option>
           </a-select>

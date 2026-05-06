@@ -48,7 +48,7 @@ async def list_users(db: DBDep, current_user: CurrentUser, role: str | None = No
         kw = f"%{keyword}%"
         from sqlalchemy import or_
         stmt = stmt.where(
-            or_(User.name.ilike(kw), User.phone.ilike(kw), User.job_number.ilike(kw))
+            or_(User.name.ilike(kw), User.phone.ilike(kw))
         )
     result = await db.execute(stmt.order_by(User.created_at.desc()))
     users = result.scalars().all()
@@ -69,18 +69,8 @@ async def create_user(body: UserCreate, db: DBDep, current_user: CurrentUser):
         if exist.scalar_one_or_none():
             raise HTTPException(status_code=400, detail="手机号已存在")
 
-    # 自动分配唯一6位数字工号
-    from sqlalchemy import func
-    last_job = await db.execute(select(func.max(User.job_number)))
-    last_job_number = last_job.scalar_one_or_none()
-    if last_job_number and last_job_number.isdigit():
-        next_job_number = str(int(last_job_number) + 1).zfill(6)
-    else:
-        next_job_number = "000001"
-
     password = _gen_password()
     user = User(
-        job_number=next_job_number,
         name=body.name,
         phone=body.phone,
         password_hash=hash_password(password),
@@ -103,8 +93,8 @@ async def update_user(user_id: int, body: UserUpdate, db: DBDep):
         raise HTTPException(status_code=404, detail="用户不存在")
 
     for field, value in body.model_dump(exclude_none=True).items():
-        if field == "job_number":
-            continue  # 禁止修改工号
+        if field == "phone":
+            continue  # 禁止修改手机号
         setattr(user, field, value)
     await db.commit()
     return ResponseModel(data=UserOut.model_validate(user))
