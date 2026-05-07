@@ -3,8 +3,15 @@ from typing import List
 import json
 
 
+import os
+
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+    # 支持通用配置在.env，环境配置在.env.{env}，后者覆盖前者
+    ENV: str = os.getenv("ENV", "dev")
+    model_config = SettingsConfigDict(
+        env_file=[".env", f".env.{os.getenv('ENV', 'dev')}"] ,
+        env_file_encoding="utf-8"
+    )
 
     # 数据库
     DATABASE_URL: str

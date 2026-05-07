@@ -7,6 +7,7 @@ import { useRoute } from 'vue-router'
 import { message } from 'ant-design-vue'
 import { publicContractApi } from '@/api/contract'
 import SignaturePad from '@/components/SignaturePad.vue'
+import ImageMultiUpload from '@/components/ImageMultiUpload.vue'
 
 const route = useRoute()
 const token = route.params.token as string
@@ -17,7 +18,7 @@ const itinerary = ref<any>(null)
 const phone = ref('')
 const verifying = ref(false)
 const signature = ref('')
-const idDocs = ref([{ name: '', id_type: 'id_card', id_no: '', front_url: '', back_url: '' }])
+const uploadedImages = ref<string[]>([])
 const submitting = ref(false)
 const errorMsg = ref('')
 const { isMobile } = useBreakpoint()
@@ -66,9 +67,14 @@ async function submitSign() {
     message.error('请先完成签名')
     return
   }
+  if (!uploadedImages.value.length) {
+    message.error('请上传证件图片')
+    return
+  }
   submitting.value = true
   try {
-    const res = await publicContractApi.sign(token, signature.value, idDocs.value)
+    // 假设后端已支持 images 字段
+    const res = await publicContractApi.sign(token, signature.value, uploadedImages.value)
     if (!res || !res.data) {
       message.error('提交失败')
     } else {
@@ -178,56 +184,10 @@ function handleUpload(field: string, docIndex: number, info: any) {
         </a-space>
       </a-card>
 
-      <!-- 步骤3：上传证件 -->
+      <!-- 步骤3：上传证件（多文件图片上传） -->
       <a-card v-else-if="step === 3" title="上传证件">
-        <div v-for="(doc, i) in idDocs" :key="i" style="border:1px solid #f0f0f0;padding:16px;margin-bottom:12px;border-radius:4px">
-          <a-row :gutter="16">
-            <a-col :span="8">
-              <a-form-item label="姓名">
-                <a-input v-model:value="doc.name" />
-              </a-form-item>
-            </a-col>
-            <a-col :span="6">
-              <a-form-item label="证件类型">
-                <a-select v-model:value="doc.id_type">
-                  <a-select-option value="id_card">身份证</a-select-option>
-                  <a-select-option value="passport">护照</a-select-option>
-                  <a-select-option value="hk_pass">港澳通行证</a-select-option>
-                </a-select>
-              </a-form-item>
-            </a-col>
-            <a-col :span="10">
-              <a-form-item label="证件号码">
-                <a-input v-model:value="doc.id_no" />
-              </a-form-item>
-            </a-col>
-            <a-col :span="12">
-              <a-form-item label="证件正面">
-                <a-upload
-                  action="/api/v1/files/upload"
-                  :data="{ scene: 'contract', related_id: '0' }"
-                  list-type="picture-card"
-                  :max-count="1"
-                  @change="(info: any) => handleUpload('front_url', i, info)"
-                >
-                  <div v-if="!doc.front_url"><plus-outlined /><div>上传</div></div>
-                </a-upload>
-              </a-form-item>
-            </a-col>
-            <a-col :span="12" v-if="doc.id_type === 'id_card'">
-              <a-form-item label="证件反面">
-                <a-upload
-                  action="/api/v1/files/upload"
-                  :data="{ scene: 'contract', related_id: '0' }"
-                  list-type="picture-card"
-                  :max-count="1"
-                  @change="(info: any) => handleUpload('back_url', i, info)"
-                >
-                  <div v-if="!doc.back_url"><plus-outlined /><div>上传</div></div>
-                </a-upload>
-              </a-form-item>
-            </a-col>
-          </a-row>
+        <div style="margin-bottom:16px">
+          <ImageMultiUpload v-model="uploadedImages" :max-count="20" :max-size-m-b="10" :data="{ scene: 'contract' }" />
         </div>
         <a-space style="margin-top:8px">
           <a-button @click="step = 2">返回</a-button>

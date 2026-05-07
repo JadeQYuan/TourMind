@@ -93,8 +93,8 @@ async function handleChangePassword() {
     <!-- Normal Login -->
     <a-card v-else class="login-card">
       <a-form :model="form" layout="vertical">
-        <a-form-item label="账号" required>
-          <a-input v-model:value="form.username" placeholder="工号 / 手机号" size="large" />
+        <a-form-item label="手机号" required>
+          <a-input v-model:value="form.phone" placeholder="手机号" size="large" />
         </a-form-item>
         <a-form-item label="密码" required>
           <a-input-password v-model:value="form.password" size="large" @keyup.enter="handleLogin" />

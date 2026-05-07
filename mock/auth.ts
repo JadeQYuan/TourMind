@@ -1,12 +1,12 @@
 import type { MockMethod } from 'vite-plugin-mock'
 import { ok, MOCK_USERS } from './_data'
 
-// Credentials: username may be phone or employee_id
-const CREDENTIALS: { id: number; accounts: string[]; password: string }[] = [
-  { id: 1, accounts: ['13800000000', 'Admin'], password: 'Admind0Tour@1' },
-  { id: 2, accounts: ['13900001111', 'EMP001'], password: 'Admin1234@56' },
-  { id: 3, accounts: ['13900002222', 'EMP002'], password: 'Admin1234@56' },
-  { id: 4, accounts: ['13900003333', 'EMP003'], password: 'Admin1234@56' },
+// Credentials: username 仅允许手机号
+const CREDENTIALS: { id: number; phone: string; password: string }[] = [
+  { id: 1, phone: '13800000000', password: 'Admind0Tour@1' },
+  { id: 2, phone: '13900001111', password: 'Admin1234@56' },
+  { id: 3, phone: '13900002222', password: 'Admin1234@56' },
+  { id: 4, phone: '13900003333', password: 'Admin1234@56' },
 ]
 
 export default [
@@ -18,9 +18,10 @@ export default [
       if (!username || !password) {
         return { code: 400, message: '账号和密码不能为空' }
       }
-      const matched = CREDENTIALS.find(c => c.accounts.includes(username) && c.password === password)
+      // 仅允许手机号登录
+      const matched = CREDENTIALS.find(c => c.phone === username && c.password === password)
       if (!matched) {
-        return { code: 401, message: '账号或密码错误' }
+        return { code: 401, message: '仅支持手机号登录，或账号/密码错误' }
       }
       const user = MOCK_USERS.find(u => u.id === matched.id)!
       return ok({

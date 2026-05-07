@@ -1,0 +1,14 @@
+# OpenSpec change metadata for upload-multi-file-component
+change:
+  name: upload-multi-file-component
+  title: 通用多文件上传组件替换证件上传
+  status: draft
+artifacts:
+  - id: proposal
+    status: pending
+  - id: design
+    status: pending
+  - id: tasks
+    status: pending
+applyRequires:
+  - tasks
