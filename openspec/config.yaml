@@ -1,82 +1,61 @@
+references:
+  - specs/global/spec.md
+  - specs/ui/spec.md
 schema: spec-driven
 
 context: |
   # TourMind 智游管家
 
-  面向中小型旅行社的轻量化旅游业务管理平台，以**订单**为核心，串联行程规划、合同签署、财务核算的完整业务链路。并发用户 ≤ 20，单体架构，无分布式需求。
+  面向中小旅行社的轻量化旅游业务管理平台，以“订单”为核心，串联行程、合同、财务全链路。单体架构，并发用户≤20，无分布式需求。
 
   ## 技术栈
-
-  **前端**
-  - Vue 3 + TypeScript + Vite
-  - Ant Design Vue 4.x（UI 组件库，使用 `<a-*>` 组件）
-  - Pinia（状态管理）
-  - Vue Router 4
-  - Axios（HTTP 客户端，统一封装在 `src/api/`）
-  - vite-plugin-mock（开发期 Mock，Mock 文件在 `mock/` 目录）
-  - dayjs（日期处理）
-
-  **后端**
-  - Python 3.12 + FastAPI
-  - SQLAlchemy 2.x + Alembic（ORM + 迁移）
-  - Pydantic v2（数据验证）
-  - JWT 认证（python-jose）
+  - 前端：Vue3 + TypeScript + Vite，Ant Design Vue 4.x，Pinia，Vue Router 4，Axios（统一封装于 src/api/），vite-plugin-mock（mock/），dayjs
+  - 后端：Python 3.12 + FastAPI，SQLAlchemy 2.x + Alembic，Pydantic v2，JWT（python-jose）
+  - 中间件：PostgreSQL（推荐 15.x 及以上）
 
   ## 项目结构
+  - frontend/src/
+    - api/        # API 封装
+    - views/      # 页面组件（按模块分）
+    - components/ # 通用组件
+    - stores/     # Pinia stores
+    - router/     # 路由
+    - types/      # TS 类型
+  - mock/         # Mock 数据
+  - backend/app/
+    - routers/    # FastAPI 路由
+    - models/     # SQLAlchemy 模型
+    - schemas/    # Pydantic schemas
 
-  ```
-  frontend/src/
-    api/          # Axios 封装的 API 调用（contractApi, orderApi 等）
-    views/        # 页面组件（按业务模块分目录）
-      account/    dashboard/  bill/  contract/
-      itinerary/  order/      product/  supplier/  user/
-    components/   # 通用组件
-    stores/       # Pinia stores
-    router/       # 路由配置
-    types/        # TypeScript 类型定义
-  mock/           # vite-plugin-mock Mock 数据文件
-  backend/app/
-    routers/      # FastAPI 路由
-    models/       # SQLAlchemy 模型
-    schemas/      # Pydantic schemas
-  ```
 
   ## 业务模块
+  | 模块前缀    | 中文名 | 说明 |
+  |-------------|--------|------|
+  | product     | 产品   | 旅游产品模板，下单时自动带入 |
+  | supplier    | 供应商 | 供应商管理 |
+  | order       | 订单   | 关联产品、客户、出发日期 |
+  | itinerary   | 行程   | 每订单一份行程，支持分享 |
+  | contract    | 合同   | 订单生成合同，含签署链接 |
+  | bill        | 账单   | 收支记录，关联订单/供应商 |
+  | account     | 账户   | 资金账户管理 |
+  | user        | 用户   | 系统用户，角色：admin/operator |
+  | dashboard   | 看板   | 统计概览 |
 
-  | 模块前缀 | 中文名 | 核心文件 | 说明 |
-  |---------|--------|---------|------|
-  | `product` | 产品 | `views/product/`, `api/product.ts`, `mock/product.ts` | 旅游产品模板，含行程模板、费用条款，下单时自动带入 |
-  | `supplier` | 供应商 | `views/supplier/`, `api/supplier.ts`, `mock/supplier.ts` | 地接社、酒店等供应商管理 |
-  | `order` | 订单 | `views/order/`, `api/order.ts`, `mock/order.ts` | 核心模块，关联产品、客户信息、出发日期 |
-  | `itinerary` | 行程 | `views/itinerary/`, `api/itinerary.ts`, `mock/itinerary.ts` | 每个订单对应一份行程，含每日明细，支持公开分享（/public/itinerary/:token） |
-  | `contract` | 合同 | `views/contract/`, `api/contract.ts`, `mock/contract.ts` | 从订单创建，含签署链接（/sign/:token），状态：pending_sign / signed / revoked |
-  | `bill` | 账单 | `views/bill/`, `api/bill.ts`, `mock/bill.ts` | 收入/支出记录，关联订单和供应商 |
-  | `account` | 账户 | `views/account/`, `api/account.ts`, `mock/account.ts` | 资金账户管理 |
-  | `user` | 用户 | `views/user/`, `api/user.ts`, `mock/user.ts` | 系统用户，角色：admin / operator |
-  | `dashboard` | 看板 | `views/dashboard/` | 统计概览，使用 ECharts |
 
   ## 编码约定
-
-  - 列表页统一采用"桌面端 Table + 移动端 Card"双视图模式，响应式切换（breakpoint: 768px）
-  - 详情查看统一使用右侧 Drawer（宽 480px），不跳转页面
-  - 新建/编辑使用 Drawer 内嵌 Form，底部操作栏固定（sticky footer）
-  - API 错误统一通过 `message.error()` 提示，不静默吞噬
-  - Mock response 函数须对 `params` 和 `params.id` 做防御判断
-  - 状态标签全部使用中文，与 `STATUS_LABEL` 映射对应
-  - 文件使用 UTF-8 编码（无 BOM）
+  - 文件编码：UTF-8（无 BOM）
+  - 全局规范详见 specs/global/spec.md
+  - 前端布局、交互、表单、表格等 UI 规范详见 specs/ui/spec.md
 
 rules:
   proposal:
-    - 使用中文撰写
-    - 保持简洁，Why / What Changes / Impact 三段结构
-    - 在 Impact 中注明涉及的业务模块
+    - 中文撰写，结构为 Why / What Changes / Impact
+    - Impact 必须注明涉及业务模块
   spec:
-    - 使用中文撰写
-    - 每个 Requirement 须有至少一个 Scenario 用于验收
-    - 场景描述须包含 Given / When / Then 三部分，且明确输入输出
-    - 需求变更须明确涉及的业务模块和具体文件路径
+    - 中文撰写，每个 Requirement 至少有一个 Scenario
+    - Scenario 用 Given / When / Then，输入输出明确
+    - 变更需注明涉及模块及具体文件路径
   tasks:
-    - 使用中文撰写
-    - 每个 task 独立可执行，明确指出要修改的文件路径（含模块目录）
-    - 按模块分组：先处理单模块变更，再处理跨模块影响
-    - 优先前端任务，后端任务单独列出
+    - 中文撰写，每个 task 独立可执行，需明确文件路径（含模块目录）
+    - 按模块分组，先单模块后跨模块
+    - 前端优先，后端任务单独列出
