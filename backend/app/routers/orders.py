@@ -114,13 +114,13 @@ async def create_order(body: OrderCreate, db: DBDep, user: CurrentUser, request:
     )
     db.add(order)
     await db.flush()
-    await write_log(
-        db, user.id, user.full_name,
-        action="create_order",
-        resource_type="order",
-        resource_id=str(order.id),
-        ip_address=request.client.host if request.client else None,
-    )
+    # await write_log(
+    #     db, user.id, user.name,
+    #     action="create_order",
+    #     resource_type="order",
+    #     resource_id=str(order.id),
+    #     ip_address=request.client.host if request.client else None,
+    # )
     await db.commit()
     await db.refresh(order)
     return ResponseModel(data=OrderOut.model_validate(order))
@@ -228,42 +228,36 @@ async def list_all_orders(
     db: DBDep,
     _: CurrentUser,
     status: str | None = None,
-    service_type: str | None = None,
-    itinerary_id: int | None = None,
+    product_id: int | None = None,
+    supplier_id: int | None = None,
     page: int = 1,
     page_size: int = 50,
 ):
     stmt = (
         select(Order)
-        .options(selectinload(Order.itinerary))
-        .join(Order.itinerary)
+        .options(selectinload(Order.product))
+        .join(Order.product)
+        .options(selectinload(Order.supplier))
+        .join(Order.supplier)
     )
     if status:
         stmt = stmt.where(Order.status == status)
-    if service_type:
-        stmt = stmt.where(Order.service_type == service_type)
-    if itinerary_id:
-        stmt = stmt.where(Order.itinerary_id == itinerary_id)
+    if product_id:
+        stmt = stmt.where(Order.product_id == product_id)
+    if supplier_id:
+        stmt = stmt.where(Order.supplier_id == supplier_id) 
     stmt = stmt.order_by(Order.order_date.desc()).offset((page - 1) * page_size).limit(page_size)
 
     result = await db.execute(stmt)
     orders = result.scalars().all()
 
-    # Bulk-load supplier names
-    supplier_ids = {o.supplier_id for o in orders if o.supplier_id}
-    supplier_map: dict[int, str] = {}
-    if supplier_ids:
-        sup_res = await db.execute(select(Supplier).where(Supplier.id.in_(supplier_ids)))
-        supplier_map = {s.id: s.name for s in sup_res.scalars().all()}
-
     data = [
         OrderListOut(
             id=o.id,
-            itinerary_id=o.itinerary_id,
-            itinerary_name=o.itinerary.name,
+            product_id=o.product_id,
+            product_name=o.product.name if o.product_id else None,
             supplier_id=o.supplier_id,
-            supplier_name=supplier_map.get(o.supplier_id) if o.supplier_id else None,
-            service_type=o.service_type,
+            supplier_name=o.supplier.name if o.supplier_id else None,
             amount=o.amount,
             order_date=o.order_date,
             status=o.status,

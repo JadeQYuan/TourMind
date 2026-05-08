@@ -96,11 +96,10 @@ class OrderOut(BaseModel):
 class OrderListOut(BaseModel):
     """跨行程订单汇总视图"""
     id: int
-    itinerary_id: int
-    itinerary_name: str
+    product_id: int | None
+    product_name: str | None
     supplier_id: int | None
     supplier_name: str | None
-    service_type: str
     amount: Decimal
     order_date: date
     status: str

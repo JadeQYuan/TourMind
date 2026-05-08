@@ -70,7 +70,7 @@ async def login(body: LoginRequest, db: DBDep):
             access_token=token,
             user=LoginUserInfo(
                 id=user.id,
-                full_name=user.full_name,
+                name=user.name,
                 role=user.role,
                 must_change_password=user.must_change_password,
             ),

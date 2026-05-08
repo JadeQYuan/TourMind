@@ -16,7 +16,7 @@ async def _resolve_user_names(db, accounts: list) -> list[AccountOut]:
     user_map: dict[int, str] = {}
     if user_ids:
         result = await db.execute(select(User).where(User.id.in_(user_ids)))
-        user_map = {u.id: u.full_name for u in result.scalars().all()}
+        user_map = {u.id: u.name for u in result.scalars().all()}
 
     out = []
     for a in accounts:

@@ -8,8 +8,6 @@ class Supplier(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(200), nullable=False)
-    # transport / accommodation / attraction / meal / guide / insurance / other
-    supplier_type: Mapped[str] = mapped_column(String(30), nullable=False)
     contact_person: Mapped[str | None] = mapped_column(String(100), nullable=True)
     contact_phone: Mapped[str | None] = mapped_column(String(20), nullable=True)
     address: Mapped[str | None] = mapped_column(Text, nullable=True)

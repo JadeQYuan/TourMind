@@ -25,25 +25,51 @@ onMounted(fetchList)
 
 async function fetchList() {
   loading.value = true
-  const res = await supplierApi.list(query)
-  suppliers.value = res.data?.items ?? res.data ?? []
-  total.value = res.data?.total ?? suppliers.value.length
-  loading.value = false
+  try {
+    const res = await supplierApi.list(query)
+    suppliers.value = res.data?.items ?? res.data ?? []
+    total.value = res.data?.total ?? suppliers.value.length
+  } catch (e: any) {
+    message.error(e?.message ?? '获取供应商列表失败')
+  } finally {
+    loading.value = false
+  }
 }
 
-function openCreate() { editingId.value = null; form.value = { is_active: true }; modalOpen.value = true }
-function openEdit(s: Supplier) { editingId.value = s.id; form.value = { ...s, contact_person: s.contact_person ?? undefined, contact_phone: s.contact_phone ?? undefined, notes: s.notes ?? undefined }; modalOpen.value = true }
+function openCreate() {
+  editingId.value = null
+  form.value = { is_active: true }
+  modalOpen.value = true
+}
+
+function openEdit(s: Supplier) {
+  editingId.value = s.id
+  form.value = {
+    ...s,
+    contact_person: s.contact_person ?? undefined,
+    contact_phone: s.contact_phone ?? undefined,
+    notes: s.notes ?? undefined,
+  }
+  modalOpen.value = true
+}
 
 async function save() {
-  if (!form.value.name?.trim()) { message.error('请输入供应商名称'); return }
-  if (editingId.value) {
-    await supplierApi.update(editingId.value, form.value)
-  } else {
-    await supplierApi.create(form.value as any)
+  if (!form.value.name?.trim()) {
+    message.error('请输入供应商名称')
+    return
   }
-  modalOpen.value = false
-  message.success('保存成功')
-  fetchList()
+  try {
+    if (editingId.value) {
+      await supplierApi.update(editingId.value, form.value)
+    } else {
+      await supplierApi.create(form.value as any)
+    }
+    modalOpen.value = false
+    message.success('保存成功')
+    fetchList()
+  } catch (e: any) {
+    message.error(e?.message ?? '保存失败')
+  }
 }
 
 async function openViewDrawer(id: number) {
@@ -62,9 +88,13 @@ async function openViewDrawer(id: number) {
 }
 
 async function toggleActive(record: Supplier) {
-  await supplierApi.update(record.id, { is_active: !record.is_active })
-  message.success(record.is_active ? '已停用' : '已启用')
-  fetchList()
+  try {
+    await supplierApi.update(record.id, { is_active: !record.is_active })
+    message.success(record.is_active ? '已停用' : '已启用')
+    fetchList()
+  } catch (e: any) {
+    message.error(e?.message ?? '操作失败')
+  }
 }
 
 const mobileFilterOpen = ref(false)
@@ -236,10 +266,10 @@ const columns = [
       @close="modalOpen = false"
     >
       <a-form layout="vertical">
-        <a-form-item label="名称" required><a-input v-model:value="form.name" /></a-form-item>
-        <a-form-item label="联系人"><a-input v-model:value="form.contact_person" /></a-form-item>
-        <a-form-item label="联系电话"><a-input v-model:value="form.contact_phone" /></a-form-item>
-        <a-form-item label="备注"><a-textarea v-model:value="form.notes" :rows="3" /></a-form-item>
+        <a-form-item label="名称" required><a-input v-model:value="form.name" placeholder="请输入供应商名称" /></a-form-item>
+        <a-form-item label="联系人"><a-input v-model:value="form.contact_person" placeholder="请输入联系人" /></a-form-item>
+        <a-form-item label="联系电话"><a-input v-model:value="form.contact_phone" placeholder="请输入联系电话" /></a-form-item>
+        <a-form-item label="备注"><a-textarea v-model:value="form.notes" :rows="3" placeholder="请输入备注" /></a-form-item>
       </a-form>
       <template #footer>
         <a-space style="width:100%;justify-content:flex-end">

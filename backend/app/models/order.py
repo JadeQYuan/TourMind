@@ -22,9 +22,8 @@ class CustomerOrder(Base):
 
     # 关联产品（可选，SET NULL on delete）
     product_id: Mapped[int | None] = mapped_column(
-        ForeignKey("products.id", ondelete="SET NULL"), nullable=True
+        ForeignKey("products.id", ondelete="SET NULL"), nullable=False
     )
-    product_name: Mapped[str] = mapped_column(String(200), nullable=False)
 
     # 客户信息
     customer_name: Mapped[str] = mapped_column(String(100), nullable=False)
@@ -46,7 +45,6 @@ class CustomerOrder(Base):
     supplier_id: Mapped[int | None] = mapped_column(
         ForeignKey("suppliers.id", ondelete="SET NULL"), nullable=True
     )
-    supplier_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
 
     cost: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
     profit: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)

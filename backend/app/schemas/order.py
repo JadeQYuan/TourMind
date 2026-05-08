@@ -9,7 +9,6 @@ OrderStatus = Literal["pending_deposit", "pending_payment", "completed"]
 
 class OrderCreate(BaseModel):
     product_id: Optional[int] = None
-    product_name: str
     customer_name: str
     customer_phone: Optional[str] = None
     travel_date: Optional[date] = None
@@ -52,7 +51,7 @@ class OrderStatusUpdate(BaseModel):
 class OrderListItem(BaseModel):
     id: int
     order_no: str
-    product_name: str
+    product_id: Optional[int]
     customer_name: str
     customer_phone: Optional[str]
     travel_date: Optional[date]

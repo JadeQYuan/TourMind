@@ -10,7 +10,7 @@ class LoginRequest(BaseModel):
 
 class LoginUserInfo(BaseModel):
     id: int
-    full_name: str
+    name: str
     role: str
     must_change_password: bool
 
@@ -28,10 +28,8 @@ class ChangePasswordRequest(BaseModel):
 
 class UserOut(BaseModel):
     id: int
-    username: str
-    full_name: str
+    name: str
     phone: str | None
-    employee_id: str | None
     role: str
     is_active: bool
     must_change_password: bool

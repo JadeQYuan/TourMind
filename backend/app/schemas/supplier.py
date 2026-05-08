@@ -5,7 +5,6 @@ from typing import Optional
 
 class SupplierCreate(BaseModel):
     name: str
-    supplier_type: Optional[str] = None
     contact_person: Optional[str] = None
     contact_phone: Optional[str] = None
     address: Optional[str] = None
@@ -14,7 +13,6 @@ class SupplierCreate(BaseModel):
 
 class SupplierUpdate(BaseModel):
     name: Optional[str] = None
-    supplier_type: Optional[str] = None
     contact_person: Optional[str] = None
     contact_phone: Optional[str] = None
     address: Optional[str] = None
@@ -25,7 +23,6 @@ class SupplierUpdate(BaseModel):
 class SupplierOut(BaseModel):
     id: int
     name: str
-    supplier_type: Optional[str]
     contact_person: Optional[str]
     contact_phone: Optional[str]
     address: Optional[str]
