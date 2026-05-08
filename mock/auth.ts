@@ -1,12 +1,12 @@
 import type { MockMethod } from 'vite-plugin-mock'
 import { ok, MOCK_USERS } from './_data'
 
-// Credentials: username 仅允许手机号
+// Credentials: encrypted passwords (base64去= → 反序 → sha256 → base64去=)
 const CREDENTIALS: { id: number; phone: string; password: string }[] = [
-  { id: 1, phone: '13800000000', password: 'Admind0Tour@1' },
-  { id: 2, phone: '13900001111', password: 'Admin1234@56' },
-  { id: 3, phone: '13900002222', password: 'Admin1234@56' },
-  { id: 4, phone: '13900003333', password: 'Admin1234@56' },
+  { id: 1, phone: '13800000000', password: 'qhUh05uWujOg3GWYjuWBqsvmoIT9KHoQ7IvVMUFe5BU' },
+  { id: 2, phone: '13900001111', password: 'oOEQusZapjL4nEjQ9O4SoZuCeBEYdzjglBGtiSoUQmA' },
+  { id: 3, phone: '13900002222', password: 'oOEQusZapjL4nEjQ9O4SoZuCeBEYdzjglBGtiSoUQmA' },
+  { id: 4, phone: '13900003333', password: 'oOEQusZapjL4nEjQ9O4SoZuCeBEYdzjglBGtiSoUQmA' },
 ]
 
 export default [

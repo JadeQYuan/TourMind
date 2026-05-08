@@ -7,6 +7,8 @@ const windowWidth = ref(window.innerWidth)
 import { userApi } from '@/api/user'
 import type { UserInfo } from '@/types'
 import { useBreakpoint } from '@/composables/useBreakpoint'
+import { genPassword } from '@/utils/genPassword'
+import { encryptPassword } from '@/utils/passwordEncrypt'
 
 const { isMobile } = useBreakpoint()
 
@@ -54,13 +56,10 @@ async function save() {
     await userApi.update(editingId.value, form.value)
     message.success('保存成功')
   } else {
-    const res = await userApi.create(form.value)
-    const pwd = res.data?.generated_password
-    if (pwd) {
-      Modal.info({ title: '初始密码', content: `初始密码：${pwd}，请记录并告知用户` })
-    } else {
-      message.success('创建成功')
-    }
+    const plain = genPassword(12)
+    const encrypted = await encryptPassword(plain)
+    await userApi.create({ ...form.value, password: encrypted })
+    Modal.info({ title: '初始密码', content: `初始密码：${plain}，请记录并告知用户` })
   }
   modalOpen.value = false
   fetchList()
@@ -86,11 +85,10 @@ async function resetPwd(u: UserInfo) {
   Modal.confirm({
     title: `确认重置 ${u.name} 的密码？`,
     onOk: async () => {
-      const res = await userApi.resetPassword(u.id)
-      const pwd = res.data?.generated_password
-      if (pwd) {
-        Modal.info({ title: '新密码', content: `初始密码：${pwd}，请告知用户` })
-      }
+      const plain = genPassword(12)
+      const encrypted = await encryptPassword(plain)
+      await userApi.resetPassword(u.id, encrypted)
+      Modal.info({ title: '新密码', content: `初始密码：${plain}，请告知用户` })
     },
   })
 }

@@ -4,6 +4,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { message } from 'ant-design-vue'
 import { useAuthStore } from '@/stores/auth'
 import { authApi } from '@/api/auth'
+import { encryptPassword } from '@/utils/passwordEncrypt'
 import logoUrl from '@/assets/logo.svg'
 
 const auth = useAuthStore()
@@ -26,10 +27,11 @@ async function handleLogin() {
   }
   loading.value = true
   try {
-    const result = await auth.login(form.phone, form.password, form.rememberMe)
+    const encrypted = await encryptPassword(form.password)
+    const result = await auth.login(form.phone, encrypted, form.rememberMe)
     if (result?.must_change_password) {
       // Show inline password-change step
-      cpForm.oldPassword = form.password
+      cpForm.oldPassword = encrypted
       showChangePassword.value = true
       return
     }
@@ -49,7 +51,8 @@ async function handleChangePassword() {
   }
   cpLoading.value = true
   try {
-    await authApi.changePassword(cpForm.oldPassword, cpForm.newPassword)
+    const encryptedNew = await encryptPassword(cpForm.newPassword)
+    await authApi.changePassword(cpForm.oldPassword, encryptedNew)
     message.success('密码修改成功，请重新登录')
     auth.logout()
     showChangePassword.value = false

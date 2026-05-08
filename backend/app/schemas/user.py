@@ -10,7 +10,11 @@ class UserCreate(BaseModel):
     name: str
     phone: str
     role: UserRole = "assistant"
+    password: str
 
+
+class ResetPasswordRequest(BaseModel):
+    password: str
 
 
 class UserUpdate(BaseModel):
@@ -31,12 +35,3 @@ class UserOut(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
-
-
-class UserCreateResponse(UserOut):
-    """Returned only on POST /users and POST /users/{id}/reset-password — contains the one-time password."""
-    generated_password: str
-
-
-class ResetPasswordResponse(BaseModel):
-    generated_password: str

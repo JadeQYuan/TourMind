@@ -9,8 +9,7 @@ class User(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     phone: Mapped[str] = mapped_column(String(20), unique=True, nullable=False)
-    # employee_id 字段移除，统一用 job_number
-    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    password: Mapped[str] = mapped_column(String(64), nullable=False)
     # system_admin / admin / assistant
     role: Mapped[str] = mapped_column(String(20), nullable=False, default="assistant")
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)

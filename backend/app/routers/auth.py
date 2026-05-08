@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, status
 from sqlalchemy import select, or_
 from app.core.database import AsyncSessionLocal
-from app.core.security import verify_password, create_access_token, hash_password
+from app.core.security import create_access_token
 from app.core.deps import DBDep, CurrentUser
 from app.models.user import User
 from app.schemas.auth import LoginRequest, TokenResponse, ChangePasswordRequest, UserOut, LoginUserInfo
@@ -50,7 +50,7 @@ async def login(body: LoginRequest, db: DBDep):
     )
     user = result.scalar_one_or_none()
 
-    if not user or not verify_password(body.password, user.password_hash):
+    if not user or user.password != body.password:
         _record_fail(body.username)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -91,10 +91,10 @@ async def logout(_: CurrentUser):
 
 @router.post("/change-password", response_model=ResponseModel)
 async def change_password(body: ChangePasswordRequest, user: CurrentUser, db: DBDep):
-    if not verify_password(body.old_password, user.password_hash):
+    if user.password != body.old_password:
         raise HTTPException(status_code=400, detail="当前密码错误")
 
-    user.password_hash = hash_password(body.new_password)
+    user.password = body.new_password
     user.must_change_password = False
     await db.commit()
     return ResponseModel(message="密码修改成功")

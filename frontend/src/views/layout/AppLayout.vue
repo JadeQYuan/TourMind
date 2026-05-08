@@ -3,6 +3,7 @@ import { computed, ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { authApi } from '@/api/auth'
+import { encryptPassword } from '@/utils/passwordEncrypt'
 import { message } from 'ant-design-vue'
 import logoIconUrl from '@/assets/logo-icon.svg'
 import { Grid } from 'ant-design-vue'
@@ -53,14 +54,13 @@ const ROLE_AVATAR_COLOR: Record<string, string> = {
 
 async function changePassword() {
   if (!pwdForm.old) { message.error('请输入当前密码'); return }
-  if (pwdForm.new_.length < 8) { message.error('新密码至少 8 位'); return }
-  if (!/[A-Z]/.test(pwdForm.new_)) { message.error('新密码须包含大写字母'); return }
-  if (!/[a-z]/.test(pwdForm.new_)) { message.error('新密码须包含小写字母'); return }
-  if (!/[0-9]/.test(pwdForm.new_)) { message.error('新密码须包含数字'); return }
+  if (pwdForm.new_.length < 1) { message.error('请输入新密码'); return }
   if (pwdForm.new_ !== pwdForm.confirm) { message.error('两次密码不一致'); return }
   pwdLoading.value = true
   try {
-    await authApi.changePassword(pwdForm.old, pwdForm.new_)
+    const encryptedOld = await encryptPassword(pwdForm.old)
+    const encryptedNew = await encryptPassword(pwdForm.new_)
+    await authApi.changePassword(encryptedOld, encryptedNew)
     message.success('密码修改成功，请重新登录')
     pwdModalOpen.value = false
     setTimeout(() => { auth.logout(); router.push('/login') }, 1500)

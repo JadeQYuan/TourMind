@@ -1,11 +1,8 @@
-import secrets
-import string
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy import select
 from app.core.deps import DBDep, require_roles, CurrentUser
-from app.core.security import hash_password
 from app.models.user import User
-from app.schemas.user import UserCreate, UserUpdate, UserOut, UserCreateResponse, ResetPasswordResponse
+from app.schemas.user import UserCreate, UserUpdate, UserOut, ResetPasswordRequest
 from app.schemas.common import ResponseModel
 
 router = APIRouter(
@@ -13,25 +10,6 @@ router = APIRouter(
     tags=["用户管理"],
     dependencies=[Depends(require_roles("admin", "system_admin"))],
 )
-
-
-def _gen_password(length: int = 12) -> str:
-    """Generate a random password that satisfies complexity requirements."""
-    upper = string.ascii_uppercase
-    lower = string.ascii_lowercase
-    digits = string.digits
-    special = "!@#$%^&*"
-    # Guarantee at least one of each category
-    parts = [
-        secrets.choice(upper),
-        secrets.choice(lower),
-        secrets.choice(digits),
-        secrets.choice(special),
-    ]
-    alphabet = upper + lower + digits + special
-    parts += [secrets.choice(alphabet) for _ in range(length - 4)]
-    secrets.SystemRandom().shuffle(parts)
-    return "".join(parts)
 
 
 @router.get("", response_model=ResponseModel)
@@ -69,20 +47,17 @@ async def create_user(body: UserCreate, db: DBDep, current_user: CurrentUser):
         if exist.scalar_one_or_none():
             raise HTTPException(status_code=400, detail="手机号已存在")
 
-    password = _gen_password()
     user = User(
         name=body.name,
         phone=body.phone,
-        password_hash=hash_password(password),
+        password=body.password,
         role=body.role,
         must_change_password=True,
     )
     db.add(user)
     await db.commit()
     await db.refresh(user)
-    data = UserCreateResponse.model_validate(user)
-    data.generated_password = password
-    return ResponseModel(data=data)
+    return ResponseModel(data=UserOut.model_validate(user))
 
 
 @router.put("/{user_id}", response_model=ResponseModel)
@@ -112,14 +87,13 @@ async def toggle_user_status(user_id: int, db: DBDep):
 
 
 @router.post("/{user_id}/reset-password", response_model=ResponseModel)
-async def reset_password(user_id: int, db: DBDep):
+async def reset_password(user_id: int, body: ResetPasswordRequest, db: DBDep):
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=404, detail="用户不存在")
 
-    password = _gen_password()
-    user.password_hash = hash_password(password)
+    user.password = body.password
     user.must_change_password = True
     await db.commit()
-    return ResponseModel(data=ResetPasswordResponse(generated_password=password))
+    return ResponseModel()

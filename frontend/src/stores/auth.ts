@@ -4,7 +4,7 @@ import { authApi } from '@/api/auth'
 import type { UserInfo } from '@/types'
 
 export const useAuthStore = defineStore('auth', () => {
-  const token = ref<string | null>(localStorage.getItem('token'))
+  const token = ref<string | null>(localStorage.getItem('token') ?? sessionStorage.getItem('token'))
   const user = ref<UserInfo | null>(null)
   const must_change_password = ref(false)
 
@@ -13,15 +13,21 @@ export const useAuthStore = defineStore('auth', () => {
   const isAdmin = computed(() => user.value?.role === 'admin' || user.value?.role === 'system_admin')
   const isAssistant = computed(() => user.value?.role === 'assistant')
 
-  function setToken(t: string) {
+  function setToken(t: string, rememberMe: boolean) {
     token.value = t
-    localStorage.setItem('token', t)
+    if (rememberMe) {
+      localStorage.setItem('token', t)
+      sessionStorage.removeItem('token')
+    } else {
+      sessionStorage.setItem('token', t)
+      localStorage.removeItem('token')
+    }
   }
 
   async function login(username: string, password: string, rememberMe = false) {
     const res = await authApi.login(username, password, rememberMe)
     if (res.code !== 0) throw new Error(res.message ?? '登录失败')
-    setToken(res.data.access_token)
+    setToken(res.data.access_token, rememberMe)
     must_change_password.value = res.data.user.must_change_password
     // Fetch full user profile
     await fetchMe()
@@ -41,6 +47,7 @@ export const useAuthStore = defineStore('auth', () => {
     user.value = null
     must_change_password.value = false
     localStorage.removeItem('token')
+    sessionStorage.removeItem('token')
   }
 
   return {

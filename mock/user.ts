@@ -4,22 +4,6 @@ import { ok, paged, MOCK_USERS } from './_data'
 let users = [...MOCK_USERS]
 let nextId = 10
 
-function genPassword() {
-  const upper = 'ABCDEFGHJKMNPQRSTUVWXYZ'
-  const lower = 'abcdefghjkmnpqrstuvwxyz'
-  const digits = '23456789'
-  const special = '!@#$%^&*'
-  const all = upper + lower + digits + special
-  const parts = [
-    upper[Math.floor(Math.random() * upper.length)],
-    lower[Math.floor(Math.random() * lower.length)],
-    digits[Math.floor(Math.random() * digits.length)],
-    special[Math.floor(Math.random() * special.length)],
-    ...Array.from({ length: 8 }, () => all[Math.floor(Math.random() * all.length)]),
-  ]
-  return parts.sort(() => Math.random() - 0.5).join('')
-}
-
 export default [
   {
     url: '/api/v1/users',
@@ -55,19 +39,17 @@ export default [
     url: '/api/v1/users',
     method: 'post',
     response: ({ body }: any) => {
-      const password = genPassword()
       const item = {
         ...body,
         id: nextId++,
-        username: body.employee_id || body.phone || `user${nextId}`,
-        full_name: body.full_name,
+        password: body.password,
         is_active: true,
         must_change_password: true,
         last_login_at: null,
         created_at: new Date().toISOString(),
       }
       users.push(item)
-      return ok({ ...item, generated_password: password })
+      return ok(item)
     },
   },
   {
@@ -93,6 +75,13 @@ export default [
   {
     url: '/api/v1/users/:id/reset-password',
     method: 'post',
-    response: () => ok({ generated_password: genPassword() }),
+    response: ({ query: params, body }: any) => {
+      if (!params?.id) return { code: 400, message: '参数错误' }
+      const idx = users.findIndex(u => u.id === Number(params.id))
+      if (idx !== -1) {
+        users[idx] = { ...users[idx], password: body.password, must_change_password: true }
+      }
+      return ok(null)
+    },
   },
 ] as MockMethod[]
