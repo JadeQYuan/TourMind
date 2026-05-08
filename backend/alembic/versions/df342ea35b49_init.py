@@ -9,6 +9,7 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy import Text
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
@@ -291,25 +292,25 @@ def upgrade() -> None:
     # ### end Alembic commands ###
 
     # 插入初始管理员用户（TourAdmin/Admind@Tour_26）
-    import hashlib
-    password_plain = 'Admind@Tour_26'
-    password_hash = hashlib.sha256(password_plain.encode('utf-8')).hexdigest()
+    # 使用 passlib bcrypt 生成密码哈希
+    from passlib.context import CryptContext
+    pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+    password_hash = pwd_context.hash('Admind@Tour_26')
     op.execute(
         sa.text(
             """
-            INSERT INTO users (job_number, name, phone, password_hash, role, is_active, must_change_password, created_at, updated_at)
-            VALUES (:job_number, :name, :phone, :password_hash, :role, :is_active, :must_change_password, now(), now())
+            INSERT INTO users (name, full_name, phone, password_hash, role, is_active, must_change_password, created_at, updated_at)
+            VALUES (:name, :full_name, :phone, :password_hash, :role, :is_active, :must_change_password, now(), now())
             """
-        ),
-        {
-            'job_number': 'TourAdmin',
-            'name': '系统管理员',
-            'phone': None,
-            'password_hash': password_hash,
-            'role': 'system_admin',
-            'is_active': True,
-            'must_change_password': False
-        }
+        ).bindparams(
+            name='系统管理员',
+            full_name='系统管理员',
+            phone='13300003333',
+            password_hash=password_hash,
+            role='system_admin',
+            is_active=True,
+            must_change_password=False
+        )
     )
 
 
