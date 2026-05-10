@@ -1,6 +1,7 @@
 from datetime import date, timedelta
 from fastapi import APIRouter, HTTPException, Depends, Query, Request
 from sqlalchemy import select, func, or_
+from sqlalchemy.orm import joinedload
 from app.core.deps import DBDep, CurrentUser, require_roles
 from app.core.audit import write_log
 from app.models.order import Order

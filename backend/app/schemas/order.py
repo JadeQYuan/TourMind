@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 from datetime import date, datetime
 from decimal import Decimal
 from typing import Optional, Literal
