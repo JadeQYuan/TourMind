@@ -1,126 +1,90 @@
-from pydantic import BaseModel
+from __future__ import annotations
 from datetime import date, datetime
-from typing import Literal
+from pydantic import BaseModel, Field
+from typing import Optional, List, Any
+from enum import Enum
 
 
-ItineraryStatus = str  # not_started / in_progress / completed
+class ItineraryStatus(str, Enum):
+    NOT_STARTED = "not_started"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+    CANCELED = "canceled"
 
 
-# ── 每日明细 ──────────────────────────────────────────────────────
-
-class AttachmentOut(BaseModel):
-    id: int
+class ItineraryAttachment(BaseModel):
     file_key: str
     file_url: str
     original_name: str
-
-    model_config = {"from_attributes": True}
-
-
-class DayCreate(BaseModel):
-    day_number: int
-    date: date
-    details: str = ""
-    accommodation_area: str | None = None
-    notes: str | None = None
+    created_at: Optional[datetime] = None
 
 
-class DayUpdate(BaseModel):
-    details: str | None = None
-    accommodation_area: str | None = None
-    notes: str | None = None
-
-
-class DayOut(BaseModel):
-    id: int
+class ItineraryDayDetail(BaseModel):
     day_number: int
     date: date
     details: str
-    accommodation_area: str | None
-    notes: str | None
-    attachments: list[AttachmentOut] = []
-
-    model_config = {"from_attributes": True}
+    accommodation_area: Optional[str] = None
+    notes: Optional[str] = None
+    attachments: List[ItineraryAttachment] = Field(default_factory=list)
 
 
-# ── 行程 ──────────────────────────────────────────────────────────
-
-class ItineraryCreate(BaseModel):
-    name: str
-    origin: str
-    destination: str
-    days: int
+class ItineraryBase(BaseModel):
+    origin: str = Field(..., min_length=1, max_length=100)
+    destination: str = Field(..., min_length=1, max_length=200)
+    days: int = Field(..., ge=1)
     departure_date: date
-    tags: list[str] | None = None
-    notes: str | None = None
-    customer_name: str
-    customer_phone: str
-    pax: int
-    travelers: str | None = None
-    order_id: int | None = None
-    days_detail: list[DayCreate] = []
+    notes: Optional[str] = None
+    customer_name: str = Field(..., min_length=1, max_length=100)
+    customer_phone: str = Field(..., min_length=1, max_length=20)
+    pax: int = Field(..., ge=1)
+    travelers: Optional[str] = None
+    product_id: Optional[int] = None
+    order_id: Optional[int] = None
+    details: Optional[List[ItineraryDayDetail]] = None
+
+
+class ItineraryCreate(ItineraryBase):
+    pass
 
 
 class ItineraryUpdate(BaseModel):
-    name: str | None = None
-    origin: str | None = None
-    destination: str | None = None
-    days: int | None = None
-    departure_date: date | None = None
-    tags: list[str] | None = None
-    notes: str | None = None
-    customer_name: str | None = None
-    customer_phone: str | None = None
-    pax: int | None = None
-    travelers: str | None = None
-    order_id: int | None = None
-    status: str | None = None
-    days_detail: list[DayCreate] | None = None
+    origin: Optional[str] = Field(None, min_length=1, max_length=100)
+    destination: Optional[str] = Field(None, min_length=1, max_length=200)
+    days: Optional[int] = Field(None, ge=1)
+    departure_date: Optional[date] = None
+    notes: Optional[str] = None
+    customer_name: Optional[str] = Field(None, min_length=1, max_length=100)
+    customer_phone: Optional[str] = Field(None, min_length=1, max_length=20)
+    pax: Optional[int] = Field(None, ge=1)
+    travelers: Optional[str] = None
+    status: Optional[ItineraryStatus] = None
+    product_id: Optional[int] = None
+    order_id: Optional[int] = None
+    details: Optional[List[ItineraryDayDetail]] = None
+
+
+class Itinerary(ItineraryBase):
+    id: int
+    status: str
+    share_token: Optional[str] = None
+    created_by: int
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
 
 
 class ItineraryListItem(BaseModel):
     id: int
-    name: str
-    customer_name: str
-    origin: str
-    destination: str
-    departure_date: date
-    days: int
-    status: str
-    order_id: int | None
-    share_token: str | None
-    created_at: datetime
-
-    model_config = {"from_attributes": True}
-
-
-class ItineraryOut(BaseModel):
-    id: int
-    name: str
     origin: str
     destination: str
     days: int
     departure_date: date
-    tags: list[str] | None
-    notes: str | None
-    customer_name: str
-    customer_phone: str
-    pax: int
-    travelers: str | None
     status: str
-    order_id: int | None
-    share_token: str | None
+    customer_name: str
+    product_id: Optional[int] = None
+    order_id: Optional[int] = None
     created_at: datetime
     updated_at: datetime
-    days_detail: list[DayOut] = []
 
     model_config = {"from_attributes": True}
-
-
-class ItineraryStatusUpdate(BaseModel):
-    status: str  # not_started / in_progress / completed
-
-
-class ShareTokenResponse(BaseModel):
-    share_token: str
-    share_url: str

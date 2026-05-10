@@ -103,34 +103,45 @@ export type OrderCreate = Omit<Order, 'id' | 'order_no' | 'profit' | 'created_at
 export type OrderUpdate = Partial<OrderCreate>
 
 // ── 行程 ───────────────────────────────────────────────────────────
+interface ItineraryDayAttachment {
+  file_key: string
+  file_url: string
+  original_name: string
+  created_at?: string
+}
+
 interface ItineraryDayDetail {
-  seq: number
-  date?: string | null
+  day_number: number
+  date?: string
   details: string
   accommodation_area?: string | null
   notes?: string | null
+  attachments?: ItineraryDayAttachment[]
 }
 
 export interface Itinerary {
   id: number
-  order_id: number
-  order_no: string
-  customer_order_id: number | null
+  origin: string
+  order_id: number | null
+  destination: string
+  days: number
+  departure_date: string
+  notes: string | null
   customer_name: string
   customer_phone: string
-  destination: string
   pax: number
   travelers: string | null
-  start_date: string
-  end_date: string
-  status: 'not_started' | 'in_progress' | 'completed' | 'cancelled'
+  status: 'not_started' | 'in_progress' | 'completed' | 'canceled'
   share_token: string | null
-  days_detail: ItineraryDayDetail[]
+  product_id: number | null
+  created_by: number
+  details: ItineraryDayDetail[] | null
   created_at: string
+  updated_at: string
 }
 
-export type ItineraryListItem = Pick<Itinerary, 'id' | 'order_id' | 'order_no' | 'customer_order_id' | 'customer_name' | 'destination' | 'start_date' | 'end_date' | 'pax' | 'status' | 'share_token' | 'created_at'>
-export type ItineraryCreate = Omit<Itinerary, 'id' | 'created_at'>
+export type ItineraryListItem = Pick<Itinerary, 'id' | 'origin' | 'destination' | 'days' | 'departure_date' | 'status' | 'customer_name' | 'product_id' | 'order_id' | 'created_at' | 'updated_at'>
+export type ItineraryCreate = Omit<Itinerary, 'id' | 'created_at' | 'updated_at'>
 export type ItineraryUpdate = Partial<ItineraryCreate>
 
 // ── 合同 ───────────────────────────────────────────────────────────
