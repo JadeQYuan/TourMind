@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import date, timedelta
 from decimal import Decimal
 from app.core.deps import DBDep, require_roles
-from app.models.order import CustomerOrder
+from app.models.order import Order
 from app.models.bill import Bill
 
 router = APIRouter(
@@ -44,9 +44,9 @@ async def get_dashboard(
         .where(Bill.bill_date <= end_date)
     )
     order_count_stmt = (
-        select(func.count(CustomerOrder.id))
-        .where(CustomerOrder.created_at >= start_date)
-        .where(CustomerOrder.created_at <= end_date)
+        select(func.count(Order.id))
+        .where(Order.created_at >= start_date)
+        .where(Order.created_at <= end_date)
     )
 
     total_income = (await db.execute(income_stmt)).scalar_one() or Decimal("0")
@@ -70,8 +70,8 @@ async def get_dashboard(
         "completed": "已完成",
     }
     dist_stmt = (
-        select(CustomerOrder.status, func.count(CustomerOrder.id))
-        .group_by(CustomerOrder.status)
+        select(Order.status, func.count(Order.id))
+        .group_by(Order.status)
     )
     dist_rows = (await db.execute(dist_stmt)).all()
     order_status_distribution = [
@@ -110,14 +110,14 @@ async def get_dashboard(
     # ── 4. Top 5 产品（按订单数） ────────────────────────────────────────
     top_products_stmt = (
         select(
-            CustomerOrder.product_id,
-            CustomerOrder.product_name,
-            func.count(CustomerOrder.id).label("order_count"),
-            func.coalesce(func.sum(CustomerOrder.price), Decimal("0")).label("total_income"),
+            Order.product_id,
+            Order.product_name,
+            func.count(Order.id).label("order_count"),
+            func.coalesce(func.sum(Order.price), Decimal("0")).label("total_income"),
         )
-        .where(CustomerOrder.created_at >= start_date)
-        .where(CustomerOrder.created_at <= end_date)
-        .group_by(CustomerOrder.product_id, CustomerOrder.product_name)
+        .where(Order.created_at >= start_date)
+        .where(Order.created_at <= end_date)
+        .group_by(Order.product_id, Order.product_name)
         .order_by(desc("order_count"))
         .limit(5)
     )
@@ -135,15 +135,15 @@ async def get_dashboard(
     # ── 5. Top 5 供应商（按成本） ────────────────────────────────────────
     top_suppliers_stmt = (
         select(
-            CustomerOrder.supplier_id,
-            CustomerOrder.supplier_name,
-            func.count(CustomerOrder.id).label("order_count"),
-            func.coalesce(func.sum(CustomerOrder.cost), Decimal("0")).label("total_cost"),
+            Order.supplier_id,
+            Order.supplier_name,
+            func.count(Order.id).label("order_count"),
+            func.coalesce(func.sum(Order.cost), Decimal("0")).label("total_cost"),
         )
-        .where(CustomerOrder.supplier_id.isnot(None))
-        .where(CustomerOrder.created_at >= start_date)
-        .where(CustomerOrder.created_at <= end_date)
-        .group_by(CustomerOrder.supplier_id, CustomerOrder.supplier_name)
+        .where(Order.supplier_id.isnot(None))
+        .where(Order.created_at >= start_date)
+        .where(Order.created_at <= end_date)
+        .group_by(Order.supplier_id, Order.supplier_name)
         .order_by(desc("total_cost"))
         .limit(5)
     )
@@ -160,8 +160,8 @@ async def get_dashboard(
 
     # ── 6. 最近 5 个订单 ─────────────────────────────────────────────────
     recent_stmt = (
-        select(CustomerOrder)
-        .order_by(CustomerOrder.created_at.desc())
+        select(Order)
+        .order_by(Order.created_at.desc())
         .limit(5)
     )
     recent_rows = (await db.execute(recent_stmt)).scalars().all()

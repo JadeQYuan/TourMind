@@ -30,7 +30,7 @@ class ContractDayOut(BaseModel):
 
 class ContractCreate(BaseModel):
     source_itinerary_id: int | None = None
-    customer_order_id: int | None = None
+    order_id: int | None = None
     # 费用条款
     total_amount: Decimal
     price_per_person: Decimal | None = None
@@ -81,7 +81,7 @@ class ContractListItem(BaseModel):
     departure_date: date
     total_amount: Decimal
     status: str
-    customer_order_id: int | None
+    order_id: int | None
     share_token: str | None
     signed_at: datetime | None
     created_at: datetime
@@ -100,7 +100,7 @@ class BillSummary(BaseModel):
 class ContractOut(BaseModel):
     id: int
     contract_no: str
-    customer_order_id: int | None
+    order_id: int | None
     source_itinerary_id: int | None
     customer_name: str
     customer_phone: str

@@ -7,15 +7,12 @@ class Bill(Base):
     __tablename__ = "bills"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    # 关联客户订单（新：PRD订单实体）
-    customer_order_id: Mapped[int | None] = mapped_column(
-        ForeignKey("customer_orders.id", ondelete="SET NULL"), nullable=True
+    # 关联订单
+    order_id: Mapped[int | None] = mapped_column(
+        ForeignKey("orders.id", ondelete="SET NULL"), nullable=True
     )
     contract_id: Mapped[int | None] = mapped_column(
         ForeignKey("contracts.id", ondelete="SET NULL"), nullable=True
-    )
-    order_id: Mapped[int | None] = mapped_column(
-        ForeignKey("orders.id", ondelete="SET NULL"), nullable=True
     )
     # income / expense
     bill_type: Mapped[str] = mapped_column(String(10), nullable=False)

@@ -11,6 +11,7 @@ class UserCreate(BaseModel):
     phone: str
     role: UserRole = "assistant"
     password: str
+    remark: str | None = None
 
 
 class ResetPasswordRequest(BaseModel):
@@ -21,7 +22,8 @@ class UserUpdate(BaseModel):
     name: str | None = None
     # 手机号不可编辑
     role: UserRole | None = None
-    is_active: bool | None = None
+    status: Literal["enabled", "disabled"] | None = None
+    remark: str | None = None
 
 
 class UserOut(BaseModel):
@@ -29,9 +31,9 @@ class UserOut(BaseModel):
     name: str
     phone: str
     role: str
-    is_active: bool
-    must_change_password: bool
-    last_login_at: datetime | None
+    status: str
+    last_login: datetime | None
     created_at: datetime
+    remark: str | None
 
     model_config = {"from_attributes": True}

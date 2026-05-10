@@ -2,18 +2,13 @@ from decimal import Decimal
 from sqlalchemy import (
     String, Text, SmallInteger, Date, DateTime, Numeric, ForeignKey, func,
 )
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
 
 
-class CustomerOrder(Base):
-    """PRD订单实体 — 客户预订记录，是业务链的核心锚点。
-
-    与供应商子订单(itinerary.py中的Order)是两个独立概念：
-    - CustomerOrder: 客户→旅行社的预订记录
-    - Order: 行程内旅行社→供应商的服务采购记录
-    """
-    __tablename__ = "customer_orders"
+class Order(Base):
+    """订单实体 — 客户预订记录，是业务链的核心锚点。"""
+    __tablename__ = "orders"
 
     id: Mapped[int] = mapped_column(primary_key=True)
 
@@ -24,6 +19,7 @@ class CustomerOrder(Base):
     product_id: Mapped[int | None] = mapped_column(
         ForeignKey("products.id", ondelete="SET NULL"), nullable=False
     )
+    product: Mapped["Product"] = relationship("Product", foreign_keys=[product_id])
 
     # 客户信息
     customer_name: Mapped[str] = mapped_column(String(100), nullable=False)
@@ -45,6 +41,7 @@ class CustomerOrder(Base):
     supplier_id: Mapped[int | None] = mapped_column(
         ForeignKey("suppliers.id", ondelete="SET NULL"), nullable=True
     )
+    supplier: Mapped["Supplier"] = relationship("Supplier", foreign_keys=[supplier_id])
 
     cost: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
     profit: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)

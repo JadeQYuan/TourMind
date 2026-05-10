@@ -3,7 +3,6 @@ import { reactive, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { message } from 'ant-design-vue'
 import { useAuthStore } from '@/stores/auth'
-import { authApi } from '@/api/auth'
 import { encryptPassword } from '@/utils/passwordEncrypt'
 import logoUrl from '@/assets/logo.svg'
 
@@ -15,11 +14,6 @@ const route = useRoute()
 const form = reactive({ phone: '', password: '', rememberMe: false })
 const loading = ref(false)
 
-// ── Change-password step ──────────────────────────────────────────
-const showChangePassword = ref(false)
-const cpForm = reactive({ oldPassword: '', newPassword: '', confirmPassword: '' })
-const cpLoading = ref(false)
-
 async function handleLogin() {
   if (!form.phone || !form.password) {
     message.warning('请输入手机号和密码')
@@ -28,39 +22,13 @@ async function handleLogin() {
   loading.value = true
   try {
     const encrypted = await encryptPassword(form.password)
-    const result = await auth.login(form.phone, encrypted, form.rememberMe)
-    if (result?.must_change_password) {
-      // Show inline password-change step
-      cpForm.oldPassword = encrypted
-      showChangePassword.value = true
-      return
-    }
+    await auth.login(form.phone, encrypted, form.rememberMe)
     const redirect = (route.query.redirect as string) || '/orders'
     router.push(redirect)
   } catch (e: any) {
     message.error(e?.message ?? String(e))
   } finally {
     loading.value = false
-  }
-}
-
-async function handleChangePassword() {
-  if (!cpForm.newPassword || cpForm.newPassword !== cpForm.confirmPassword) {
-    message.warning('两次输入的密码不一致')
-    return
-  }
-  cpLoading.value = true
-  try {
-    const encryptedNew = await encryptPassword(cpForm.newPassword)
-    await authApi.changePassword(cpForm.oldPassword, encryptedNew)
-    message.success('密码修改成功，请重新登录')
-    auth.logout()
-    showChangePassword.value = false
-    form.password = ''
-  } catch (e: any) {
-    message.error(e?.message ?? '密码修改失败')
-  } finally {
-    cpLoading.value = false
   }
 }
 </script>
@@ -72,29 +40,8 @@ async function handleChangePassword() {
       <p class="login-slogan">专业旅行社智能管理平台</p>
     </div>
 
-    <!-- Password Change (first login) -->
-    <a-card v-if="showChangePassword" class="login-card">
-      <a-alert
-        message="首次登录需要修改密码（≥12位，含大小写、数字、特殊符号）"
-        type="warning"
-        show-icon
-        style="margin-bottom: 16px"
-      />
-      <a-form layout="vertical">
-        <a-form-item label="新密码" required>
-          <a-input-password v-model:value="cpForm.newPassword" size="large" placeholder="≥12位，含大小写字母、数字、特殊字符" />
-        </a-form-item>
-        <a-form-item label="确认新密码" required>
-          <a-input-password v-model:value="cpForm.confirmPassword" size="large" />
-        </a-form-item>
-        <a-button type="primary" block size="large" :loading="cpLoading" @click="handleChangePassword">
-          设置新密码
-        </a-button>
-      </a-form>
-    </a-card>
-
     <!-- Normal Login -->
-    <a-card v-else class="login-card">
+    <a-card class="login-card">
       <a-form :model="form" layout="vertical">
         <a-form-item label="手机号" required>
           <a-input v-model:value="form.phone" placeholder="手机号" size="large" />

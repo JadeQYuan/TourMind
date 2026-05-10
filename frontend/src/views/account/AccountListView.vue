@@ -13,10 +13,10 @@ const { isMobile } = useBreakpoint()
 const accounts = ref<Account[]>([])
 const total = ref(0)
 const loading = ref(false)
-const query = reactive({ page: 1, page_size: 20, keyword: undefined as string | undefined, account_type: undefined as string | undefined, is_active: true as boolean | undefined })
+const query = reactive({ page: 1, page_size: 20, keyword: undefined as string | undefined, type: undefined as string | undefined, status: 'enabled' as string | undefined })
 const modalOpen = ref(false)
 const editingId = ref<number | null>(null)
-const form = ref<Partial<Account>>({ account_type: 'bank', is_active: true })
+const form = ref<Partial<Account>>({ type: 'bank', status: 'enabled' })
 
 const drawerViewOpen = ref(false)
 const drawerViewData = ref<Account | null>(null)
@@ -45,7 +45,7 @@ async function fetchList() {
   loading.value = false
 }
 
-function openCreate() { editingId.value = null; form.value = { account_type: 'bank', is_active: true }; modalOpen.value = true }
+function openCreate() { editingId.value = null; form.value = { type: 'bank', status: 'enabled' }; modalOpen.value = true }
 function openEdit(a: Account) { editingId.value = a.id; form.value = { ...a, user_id: (a as any).user_id ?? undefined, user_name: (a as any).user_name ?? undefined }; modalOpen.value = true }
 
 function onUserChange(userId: number) {
@@ -81,33 +81,34 @@ async function openViewDrawer(id: number) {
 }
 
 async function toggleActive(record: Account) {
-  await accountApi.update(record.id, { is_active: !record.is_active })
-  message.success(record.is_active ? '已停用' : '已启用')
+  const newStatus = record.status === 'enabled' ? 'disabled' : 'enabled'
+  await accountApi.update(record.id, { status: newStatus })
+  message.success(newStatus === 'enabled' ? '已启用' : '已停用')
   fetchList()
 }
 
 const mobileFilterOpen = ref(false)
-const mobileFilter = reactive({ keyword: undefined as string | undefined, account_type: undefined as string | undefined, is_active: true as boolean | undefined })
+const mobileFilter = reactive({ keyword: undefined as string | undefined, type: undefined as string | undefined, status: 'enabled' as string | undefined })
 
 const activeFilterCount = computed(() => {
   let n = 0
   if (query.keyword) n++
-  if (query.account_type) n++
-  if (query.is_active !== true) n++
+  if (query.type) n++
+  if (query.status !== 'enabled') n++
   return n
 })
 
 function openMobileFilter() {
   mobileFilter.keyword = query.keyword
-  mobileFilter.account_type = query.account_type
-  mobileFilter.is_active = query.is_active
+  mobileFilter.type = query.type
+  mobileFilter.status = query.status
   mobileFilterOpen.value = true
 }
 
 function applyMobileFilter() {
   query.keyword = mobileFilter.keyword
-  query.account_type = mobileFilter.account_type
-  query.is_active = mobileFilter.is_active
+  query.type = mobileFilter.type
+  query.status = mobileFilter.status
   query.page = 1
   mobileFilterOpen.value = false
   fetchList()
@@ -115,17 +116,16 @@ function applyMobileFilter() {
 
 function resetMobileFilter() {
   mobileFilter.keyword = undefined
-  mobileFilter.account_type = undefined
-  mobileFilter.is_active = true
+  mobileFilter.type = undefined
+  mobileFilter.status = 'enabled'
 }
 
 const columns = [
   { title: '', key: '_seq', width: 55, align: 'center' as const },
   { title: '账户名称', dataIndex: 'name', width: 180, ellipsis: true },
-  { title: '类型', dataIndex: 'account_type', width: 90, customRender: ({ text }: any) => TYPES[text] ?? text },
-  { title: '描述', dataIndex: 'description', width: 200, ellipsis: true },
+  { title: '类型', dataIndex: 'type', width: 90, customRender: ({ text }: any) => TYPES[text] ?? text },
   { title: '负责人', dataIndex: 'user_name', width: 100 },
-  { title: '状态', key: 'is_active', width: 80, align: 'center' },
+  { title: '状态', key: 'status', width: 80, align: 'center' },
   { title: '操作', key: 'action', width: 160, fixed: 'right' as const },
 ]
 </script>
@@ -139,18 +139,18 @@ const columns = [
           <a-input v-model:value="query.keyword" placeholder="搜索账户名称" allow-clear style="width:160px" @change="() => { query.page = 1; fetchList() }" @pressEnter="() => { query.page = 1; fetchList() }" />
         </a-form-item>
         <a-form-item label="类型">
-          <a-select v-model:value="query.account_type" placeholder="全部" allow-clear style="width:110px" @change="() => { query.page = 1; fetchList() }">
+          <a-select v-model:value="query.type" placeholder="全部" allow-clear style="width:110px" @change="() => { query.page = 1; fetchList() }">
             <a-select-option v-for="(label, key) in TYPES" :key="key" :value="key">{{ label }}</a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item label="状态">
-          <a-select v-model:value="query.is_active" placeholder="全部" allow-clear style="width:90px" @change="() => { query.page = 1; fetchList() }">
-            <a-select-option :value="true">启用</a-select-option>
-            <a-select-option :value="false">停用</a-select-option>
+          <a-select v-model:value="query.status" placeholder="全部" allow-clear style="width:90px" @change="() => { query.page = 1; fetchList() }">
+            <a-select-option value="enabled">启用</a-select-option>
+            <a-select-option value="disabled">停用</a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item>
-          <a-button @click="() => { query.keyword = undefined; query.account_type = undefined; query.is_active = true; query.page = 1; fetchList() }">重置</a-button>
+          <a-button @click="() => { query.keyword = undefined; query.type = undefined; query.status = 'enabled'; query.page = 1; fetchList() }">重置</a-button>
         </a-form-item>
       </a-form>
       <a-badge v-if="isMobile" :count="activeFilterCount" :offset="[-2, 2]">
@@ -169,15 +169,15 @@ const columns = [
                 <div style="display:flex;justify-content:space-between;align-items:flex-start">
                   <div>
                     <div style="font-weight:600;color:#111827;font-size:14px">{{ record.name }}</div>
-                    <div style="font-size:13px;color:#6b7280;margin-top:2px">类型：{{ TYPES[record.account_type] ?? record.account_type }}</div>
+                    <div style="font-size:13px;color:#6b7280;margin-top:2px">类型：{{ TYPES[record.type] ?? record.type }}</div>
                     <div v-if="record.user_name" style="font-size:12px;color:#9ca3af;margin-top:2px">负责人：{{ record.user_name }}</div>
                   </div>
-                  <a-tag :color="record.is_active ? 'green' : 'default'" style="margin:0">{{ record.is_active ? '启用' : '停用' }}</a-tag>
+                  <a-tag :color="record.status === 'enabled' ? 'green' : 'default'" style="margin:0">{{ record.status === 'enabled' ? '启用' : '停用' }}</a-tag>
                 </div>
                 <div style="display:flex;justify-content:flex-end;gap:6px;margin-top:8px">
                   <a-button size="small" @click="openViewDrawer(record.id)">查看</a-button>
                   <a-button size="small" @click="openEdit(record)">编辑</a-button>
-                  <a-button size="small" @click="toggleActive(record)">{{ record.is_active ? '停用' : '启用' }}</a-button>
+                  <a-button size="small" @click="toggleActive(record)">{{ record.status === 'enabled' ? '停用' : '启用' }}</a-button>
                 </div>
               </a-card>
             </a-list-item>
@@ -197,14 +197,14 @@ const columns = [
       row-key="id" size="middle">
       <template #bodyCell="{ column, record, index }">
         <template v-if="column.key === '_seq'">{{ (query.page - 1) * query.page_size + index + 1 }}</template>
-        <template v-else-if="column.key === 'is_active'">
-          <a-tag :color="record.is_active ? 'green' : 'default'">{{ record.is_active ? '启用' : '停用' }}</a-tag>
+        <template v-else-if="column.key === 'status'">
+          <a-tag :color="record.status === 'enabled' ? 'green' : 'default'">{{ record.status === 'enabled' ? '启用' : '停用' }}</a-tag>
         </template>
         <template v-else-if="column.key === 'action'">
           <a-space>
             <a-button size="small" @click="openViewDrawer(record.id)">查看</a-button>
             <a-button size="small" @click="openEdit(record)">编辑</a-button>
-            <a-button size="small" @click="toggleActive(record)">{{ record.is_active ? '停用' : '启用' }}</a-button>
+            <a-button size="small" @click="toggleActive(record)">{{ record.status === 'enabled' ? '停用' : '启用' }}</a-button>
           </a-space>
         </template>
       </template>
@@ -216,14 +216,14 @@ const columns = [
       <a-form layout="vertical">
         <a-form-item label="账户名称"><a-input v-model:value="mobileFilter.keyword" placeholder="搜索账户名称" allow-clear /></a-form-item>
         <a-form-item label="类型">
-          <a-select v-model:value="mobileFilter.account_type" placeholder="全部" allow-clear style="width:100%">
+          <a-select v-model:value="mobileFilter.type" placeholder="全部" allow-clear style="width:100%">
             <a-select-option v-for="(label, key) in TYPES" :key="key" :value="key">{{ label }}</a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item label="状态">
-          <a-select v-model:value="mobileFilter.is_active" placeholder="全部" allow-clear style="width:100%">
-            <a-select-option :value="true">启用</a-select-option>
-            <a-select-option :value="false">停用</a-select-option>
+          <a-select v-model:value="mobileFilter.status" placeholder="全部" allow-clear style="width:100%">
+            <a-select-option value="enabled">启用</a-select-option>
+            <a-select-option value="disabled">停用</a-select-option>
           </a-select>
         </a-form-item>
       </a-form>
@@ -247,16 +247,13 @@ const columns = [
         <template v-if="drawerViewData">
           <a-descriptions :column="1" bordered size="small">
             <a-descriptions-item label="账户名称">{{ drawerViewData.name }}</a-descriptions-item>
-            <a-descriptions-item label="账户类型">{{ TYPES[(drawerViewData as any).account_type] ?? (drawerViewData as any).account_type }}</a-descriptions-item>
-            <a-descriptions-item label="负责人">{{ (drawerViewData as any).user_name ?? '-' }}</a-descriptions-item>
-            <a-descriptions-item label="描述">
-              <span style="white-space:pre-wrap">{{ (drawerViewData as any).description ?? '-' }}</span>
-            </a-descriptions-item>
+            <a-descriptions-item label="账户类型">{{ TYPES[drawerViewData.type] ?? drawerViewData.type }}</a-descriptions-item>
+            <a-descriptions-item label="负责人">{{ drawerViewData.user_name ?? '-' }}</a-descriptions-item>
             <a-descriptions-item label="备注">
-              <span style="white-space:pre-wrap">{{ drawerViewData.notes ?? '-' }}</span>
+              <span style="white-space:pre-wrap">{{ drawerViewData.remark ?? '-' }}</span>
             </a-descriptions-item>
             <a-descriptions-item label="状态">
-              <a-tag :color="drawerViewData.is_active ? 'green' : 'default'">{{ drawerViewData.is_active ? '启用' : '停用' }}</a-tag>
+              <a-tag :color="drawerViewData.status === 'enabled' ? 'green' : 'default'">{{ drawerViewData.status === 'enabled' ? '启用' : '停用' }}</a-tag>
             </a-descriptions-item>
             <a-descriptions-item label="创建时间">{{ drawerViewData.created_at?.slice(0, 16).replace('T', ' ') }}</a-descriptions-item>
           </a-descriptions>
@@ -274,19 +271,16 @@ const columns = [
       <a-form layout="vertical">
         <a-form-item label="账户名称" required><a-input v-model:value="form.name" /></a-form-item>
         <a-form-item label="账户类型">
-          <a-select v-model:value="form.account_type" style="width:100%">
+          <a-select v-model:value="form.type" style="width:100%">
             <a-select-option v-for="(label, key) in TYPES" :key="key" :value="key">{{ label }}</a-select-option>
           </a-select>
-        </a-form-item>
-        <a-form-item label="描述">
-          <a-textarea v-model:value="form.description" :rows="2" placeholder="账户用途说明" />
         </a-form-item>
         <a-form-item label="负责人">
           <a-select v-model:value="form.user_id" placeholder="请选择负责人" allow-clear style="width:100%" @change="onUserChange">
             <a-select-option v-for="u in userOptions" :key="u.id" :value="u.id">{{ u.name }}</a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item label="备注"><a-textarea v-model:value="form.notes" :rows="2" /></a-form-item>
+        <a-form-item label="备注"><a-textarea v-model:value="form.remark" :rows="2" /></a-form-item>
       </a-form>
       <template #footer>
         <a-space style="width:100%;justify-content:flex-end">

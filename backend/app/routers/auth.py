@@ -57,11 +57,11 @@ async def login(body: LoginRequest, db: DBDep):
             detail="账号或密码错误",
         )
 
-    if not user.is_active:
+    if user.status != "enabled":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="账号已禁用")
 
     _clear_fail(body.username)
-    user.last_login_at = datetime.now(timezone.utc)
+    user.last_login = datetime.now(timezone.utc)
     await db.commit()
 
     token = create_access_token(user.id, remember_me=body.remember_me)
@@ -72,7 +72,6 @@ async def login(body: LoginRequest, db: DBDep):
                 id=user.id,
                 name=user.name,
                 role=user.role,
-                must_change_password=user.must_change_password,
             ),
         )
     )
@@ -95,6 +94,5 @@ async def change_password(body: ChangePasswordRequest, user: CurrentUser, db: DB
         raise HTTPException(status_code=400, detail="当前密码错误")
 
     user.password = body.new_password
-    user.must_change_password = False
     await db.commit()
     return ResponseModel(message="密码修改成功")

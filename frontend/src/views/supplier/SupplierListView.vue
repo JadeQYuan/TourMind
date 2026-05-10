@@ -12,10 +12,10 @@ const { isMobile } = useBreakpoint()
 const suppliers = ref<Supplier[]>([])
 const total = ref(0)
 const loading = ref(false)
-const query = reactive({ keyword: '', is_active: true as boolean | undefined, page: 1, page_size: 20 })
+const query = reactive({ keyword: '', status: 'enabled' as string | undefined, page: 1, page_size: 20 })
 const modalOpen = ref(false)
 const editingId = ref<number | null>(null)
-const form = ref<Partial<Supplier>>({ is_active: true })
+const form = ref<Partial<Supplier>>({ status: 'enabled' })
 
 const drawerViewOpen = ref(false)
 const drawerViewData = ref<Supplier | null>(null)
@@ -38,7 +38,7 @@ async function fetchList() {
 
 function openCreate() {
   editingId.value = null
-  form.value = { is_active: true }
+  form.value = { status: 'enabled' }
   modalOpen.value = true
 }
 
@@ -48,7 +48,7 @@ function openEdit(s: Supplier) {
     ...s,
     contact_person: s.contact_person ?? undefined,
     contact_phone: s.contact_phone ?? undefined,
-    notes: s.notes ?? undefined,
+    remark: s.remark ?? undefined,
   }
   modalOpen.value = true
 }
@@ -89,8 +89,8 @@ async function openViewDrawer(id: number) {
 
 async function toggleActive(record: Supplier) {
   try {
-    await supplierApi.update(record.id, { is_active: !record.is_active })
-    message.success(record.is_active ? '已停用' : '已启用')
+    await supplierApi.update(record.id, { status: record.status === 'enabled' ? 'disabled' : 'enabled' })
+    message.success(record.status === 'enabled' ? '已停用' : '已启用')
     fetchList()
   } catch (e: any) {
     message.error(e?.message ?? '操作失败')
@@ -98,24 +98,24 @@ async function toggleActive(record: Supplier) {
 }
 
 const mobileFilterOpen = ref(false)
-const mobileFilter = reactive({ keyword: '', is_active: true as boolean | undefined })
+const mobileFilter = reactive({ keyword: '', status: 'enabled' as string | undefined })
 
 const activeFilterCount = computed(() => {
   let n = 0
   if (query.keyword) n++
-  if (query.is_active !== true) n++
+  if (query.status !== 'enabled') n++
   return n
 })
 
 function openMobileFilter() {
   mobileFilter.keyword = query.keyword
-  mobileFilter.is_active = query.is_active
+  mobileFilter.status = query.status
   mobileFilterOpen.value = true
 }
 
 function applyMobileFilter() {
   query.keyword = mobileFilter.keyword
-  query.is_active = mobileFilter.is_active
+  query.status = mobileFilter.status
   query.page = 1
   mobileFilterOpen.value = false
   fetchList()
@@ -123,7 +123,7 @@ function applyMobileFilter() {
 
 function resetMobileFilter() {
   mobileFilter.keyword = ''
-  mobileFilter.is_active = true
+  mobileFilter.status = 'enabled'
 }
 
 const columns = [
@@ -131,8 +131,8 @@ const columns = [
   { title: '名称', dataIndex: 'name', width: 200, ellipsis: true },
   { title: '联系人', dataIndex: 'contact_person', width: 100 },
   { title: '联系电话', dataIndex: 'contact_phone', width: 140 },
-  { title: '备注', dataIndex: 'notes', width: 180, ellipsis: true },
-  { title: '状态', key: 'is_active', width: 80, align: 'center' },
+  { title: '备注', dataIndex: 'remark', width: 180, ellipsis: true },
+  { title: '状态', key: 'status', width: 80, align: 'center' },
   { title: '操作', key: 'action', width: 160, fixed: 'right' as const },
 ]
 </script>
@@ -146,13 +146,13 @@ const columns = [
           <a-input v-model:value="query.keyword" placeholder="搜索供应商名称" allow-clear @change="fetchList" style="width:200px" />
         </a-form-item>
         <a-form-item label="状态">
-          <a-select v-model:value="query.is_active" placeholder="全部" allow-clear style="width:90px" @change="fetchList">
-            <a-select-option :value="true">启用</a-select-option>
-            <a-select-option :value="false">停用</a-select-option>
+          <a-select v-model:value="query.status" placeholder="全部" allow-clear style="width:90px" @change="fetchList">
+            <a-select-option value="enabled">启用</a-select-option>
+            <a-select-option value="disabled">停用</a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item>
-          <a-button @click="() => { query.keyword = ''; query.is_active = true; query.page = 1; fetchList() }">重置</a-button>
+          <a-button @click="() => { query.keyword = ''; query.status = 'enabled'; query.page = 1; fetchList() }">重置</a-button>
         </a-form-item>
       </a-form>
       <a-badge v-if="isMobile" :count="activeFilterCount" :offset="[-2, 2]">
@@ -174,12 +174,12 @@ const columns = [
                     <div v-if="record.contact_person" style="font-size:13px;color:#6b7280;margin-top:2px">联系人：{{ record.contact_person }}</div>
                     <div v-if="record.contact_phone" style="font-size:13px;color:#6b7280;margin-top:2px">电话：{{ record.contact_phone }}</div>
                   </div>
-                  <a-tag :color="record.is_active ? 'green' : 'default'" style="margin:0">{{ record.is_active ? '启用' : '停用' }}</a-tag>
+                  <a-tag :color="record.status === 'enabled' ? 'green' : 'default'" style="margin:0">{{ record.status === 'enabled' ? '启用' : '停用' }}</a-tag>
                 </div>
                 <div style="display:flex;justify-content:flex-end;gap:6px;margin-top:8px">
                   <a-button size="small" @click="openViewDrawer(record.id)">查看</a-button>
                   <a-button size="small" @click="openEdit(record)">编辑</a-button>
-                  <a-button size="small" @click="toggleActive(record)">{{ record.is_active ? '停用' : '启用' }}</a-button>
+                  <a-button size="small" @click="toggleActive(record)">{{ record.status === 'enabled' ? '停用' : '启用' }}</a-button>
                 </div>
               </a-card>
             </a-list-item>
@@ -199,14 +199,14 @@ const columns = [
       row-key="id" size="middle">
       <template #bodyCell="{ column, record, index }">
         <template v-if="column.key === '_seq'">{{ (query.page - 1) * query.page_size + index + 1 }}</template>
-        <template v-else-if="column.key === 'is_active'">
-          <a-tag :color="record.is_active ? 'green' : 'default'">{{ record.is_active ? '启用' : '停用' }}</a-tag>
+        <template v-else-if="column.key === 'status'">
+          <a-tag :color="record.status === 'enabled' ? 'green' : 'default'">{{ record.status === 'enabled' ? '启用' : '停用' }}</a-tag>
         </template>
         <template v-else-if="column.key === 'action'">
           <a-space>
             <a-button size="small" @click="openViewDrawer(record.id)">查看</a-button>
             <a-button size="small" @click="openEdit(record)">编辑</a-button>
-            <a-button size="small" @click="toggleActive(record)">{{ record.is_active ? '停用' : '启用' }}</a-button>
+            <a-button size="small" @click="toggleActive(record)">{{ record.status === 'enabled' ? '停用' : '启用' }}</a-button>
           </a-space>
         </template>
       </template>
@@ -218,9 +218,9 @@ const columns = [
       <a-form layout="vertical">
         <a-form-item label="名称"><a-input v-model:value="mobileFilter.keyword" placeholder="搜索供应商名称" allow-clear /></a-form-item>
         <a-form-item label="状态">
-          <a-select v-model:value="mobileFilter.is_active" placeholder="全部" allow-clear style="width:100%">
-            <a-select-option :value="true">启用</a-select-option>
-            <a-select-option :value="false">停用</a-select-option>
+          <a-select v-model:value="mobileFilter.status" placeholder="全部" allow-clear style="width:100%">
+            <a-select-option value="enabled">启用</a-select-option>
+            <a-select-option value="disabled">停用</a-select-option>
           </a-select>
         </a-form-item>
       </a-form>
@@ -247,10 +247,10 @@ const columns = [
             <a-descriptions-item label="联系人">{{ drawerViewData.contact_person ?? '-' }}</a-descriptions-item>
             <a-descriptions-item label="联系电话">{{ drawerViewData.contact_phone ?? '-' }}</a-descriptions-item>
             <a-descriptions-item label="备注">
-              <span style="white-space:pre-wrap">{{ drawerViewData.notes ?? '-' }}</span>
+              <span style="white-space:pre-wrap">{{ drawerViewData.remark ?? '-' }}</span>
             </a-descriptions-item>
             <a-descriptions-item label="状态">
-              <a-tag :color="drawerViewData.is_active ? 'green' : 'default'">{{ drawerViewData.is_active ? '启用' : '停用' }}</a-tag>
+              <a-tag :color="drawerViewData.status === 'enabled' ? 'green' : 'default'">{{ drawerViewData.status === 'enabled' ? '启用' : '停用' }}</a-tag>
             </a-descriptions-item>
             <a-descriptions-item label="创建时间">{{ drawerViewData.created_at?.slice(0, 16).replace('T', ' ') }}</a-descriptions-item>
           </a-descriptions>
@@ -269,7 +269,7 @@ const columns = [
         <a-form-item label="名称" required><a-input v-model:value="form.name" placeholder="请输入供应商名称" /></a-form-item>
         <a-form-item label="联系人"><a-input v-model:value="form.contact_person" placeholder="请输入联系人" /></a-form-item>
         <a-form-item label="联系电话"><a-input v-model:value="form.contact_phone" placeholder="请输入联系电话" /></a-form-item>
-        <a-form-item label="备注"><a-textarea v-model:value="form.notes" :rows="3" placeholder="请输入备注" /></a-form-item>
+        <a-form-item label="备注"><a-textarea v-model:value="form.remark" :rows="3" placeholder="请输入备注" /></a-form-item>
       </a-form>
       <template #footer>
         <a-space style="width:100%;justify-content:flex-end">

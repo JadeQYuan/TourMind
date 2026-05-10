@@ -5,10 +5,10 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from app.core.deps import DBDep, CurrentUser
 from app.core.audit import write_log
-from app.models.itinerary import Itinerary, ItineraryDay, Order
+from app.models.itinerary import Itinerary, ItineraryDay
 from app.schemas.itinerary import (
     ItineraryCreate, ItineraryUpdate, ItineraryOut, ItineraryListItem,
-    OrderCreate, OrderUpdate, OrderOut, ItineraryStatusUpdate, ShareTokenResponse,
+    ItineraryStatusUpdate, ShareTokenResponse,
 )
 from app.schemas.common import ResponseModel
 
@@ -17,13 +17,11 @@ public_router = APIRouter(prefix="/public/itineraries", tags=["行程公开分�
 
 _LOAD_FULL = [
     selectinload(Itinerary.days_detail).selectinload(ItineraryDay.attachments),
-    selectinload(Itinerary.orders).selectinload(Order.attachments),
 ]
 
 VALID_TRANSITIONS = {
     "not_started": {"in_progress", "cancelled"},
     "in_progress":  {"completed"},
-    # "completed":    {"in_progress"},  # 已移除撤销完成回退
 }
 
 
@@ -59,10 +57,10 @@ async def list_itineraries(
 
 @router.post("", response_model=ResponseModel)
 async def create_itinerary(body: ItineraryCreate, db: DBDep, user: CurrentUser, request: Request):
-    # Enforce unique customer_order_id
-    if body.customer_order_id:
+    # Enforce unique order_id
+    if body.order_id:
         conflict = await db.execute(
-            select(Itinerary).where(Itinerary.customer_order_id == body.customer_order_id)
+            select(Itinerary).where(Itinerary.order_id == body.order_id)
         )
         if conflict.scalar_one_or_none():
             raise HTTPException(status_code=409, detail="该订单已关联行程")
@@ -213,55 +211,6 @@ async def copy_itinerary(itinerary_id: int, db: DBDep, user: CurrentUser):
 async def delete_itinerary(itinerary_id: int, db: DBDep, _: CurrentUser):
     itinerary = await _get_itinerary(itinerary_id, db)
     await db.delete(itinerary)
-    await db.commit()
-    return ResponseModel(message="删除成功")
-
-
-# ── 订单子路由 ─────────────────────────────────────────────────────
-
-@router.get("/{itinerary_id}/orders", response_model=ResponseModel)
-async def list_orders(itinerary_id: int, db: DBDep, _: CurrentUser):
-    result = await db.execute(
-        select(Order).where(Order.itinerary_id == itinerary_id)
-        .options(selectinload(Order.attachments))
-        .order_by(Order.order_date)
-    )
-    return ResponseModel(data=[OrderOut.model_validate(o) for o in result.scalars().all()])
-
-
-@router.post("/{itinerary_id}/orders", response_model=ResponseModel)
-async def create_order(itinerary_id: int, body: OrderCreate, db: DBDep, user: CurrentUser):
-    order = Order(**body.model_dump(), itinerary_id=itinerary_id, created_by=user.id)
-    db.add(order)
-    await db.commit()
-    await db.refresh(order)
-    return ResponseModel(data=OrderOut.model_validate(order))
-
-
-@router.put("/{itinerary_id}/orders/{order_id}", response_model=ResponseModel)
-async def update_order(itinerary_id: int, order_id: int, body: OrderUpdate, db: DBDep, _: CurrentUser):
-    result = await db.execute(
-        select(Order).where(Order.id == order_id, Order.itinerary_id == itinerary_id)
-    )
-    order = result.scalar_one_or_none()
-    if not order:
-        raise HTTPException(status_code=404, detail="订单不存在")
-
-    for field, value in body.model_dump(exclude_none=True).items():
-        setattr(order, field, value)
-    await db.commit()
-    return ResponseModel(data=OrderOut.model_validate(order))
-
-
-@router.delete("/{itinerary_id}/orders/{order_id}", response_model=ResponseModel)
-async def delete_order(itinerary_id: int, order_id: int, db: DBDep, _: CurrentUser):
-    result = await db.execute(
-        select(Order).where(Order.id == order_id, Order.itinerary_id == itinerary_id)
-    )
-    order = result.scalar_one_or_none()
-    if not order:
-        raise HTTPException(status_code=404, detail="订单不存在")
-    await db.delete(order)
     await db.commit()
     return ResponseModel(message="删除成功")
 

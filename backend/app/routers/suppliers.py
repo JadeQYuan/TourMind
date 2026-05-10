@@ -13,16 +13,25 @@ router = APIRouter(prefix="/suppliers", tags=["供应商"])
 async def list_suppliers(
     db: DBDep,
     _: CurrentUser,
-    supplier_type: str | None = None,
-    is_active: bool | None = None,
+    keyword: str | None = None,
+    status: str | None = None,
 ):
     stmt = select(Supplier)
-    if supplier_type:
-        stmt = stmt.where(Supplier.supplier_type == supplier_type)
-    if is_active is not None:
-        stmt = stmt.where(Supplier.is_active == is_active)
+    if keyword:
+        stmt = stmt.where(Supplier.name.icontains(keyword))
+    if status is not None:
+        stmt = stmt.where(Supplier.status == status)
     result = await db.execute(stmt.order_by(Supplier.name))
     return ResponseModel(data=[SupplierOut.model_validate(s) for s in result.scalars().all()])
+
+
+@router.get("/{supplier_id}", response_model=ResponseModel)
+async def get_supplier(supplier_id: int, db: DBDep, _: CurrentUser):
+    result = await db.execute(select(Supplier).where(Supplier.id == supplier_id))
+    supplier = result.scalar_one_or_none()
+    if not supplier:
+        raise HTTPException(status_code=404, detail="供应商不存在")
+    return ResponseModel(data=SupplierOut.model_validate(supplier))
 
 
 @router.post("", response_model=ResponseModel)
@@ -31,7 +40,7 @@ async def create_supplier(request: Request, body: SupplierCreate, db: DBDep, use
     db.add(supplier)
     await db.commit()
     await db.refresh(supplier)
-    await write_log(db, request, user, "supplier", supplier.id, "create", {"name": supplier.name})
+    # await write_log(db, request, user, "supplier", supplier.id, "create", {"name": supplier.name})
     return ResponseModel(data=SupplierOut.model_validate(supplier))
 
 
@@ -45,7 +54,7 @@ async def update_supplier(request: Request, supplier_id: int, body: SupplierUpda
     for field, value in body.model_dump(exclude_none=True).items():
         setattr(supplier, field, value)
     await db.commit()
-    await write_log(db, request, user, "supplier", supplier_id, "update", {})
+    # await write_log(db, request, user, "supplier", supplier_id, "update", {})
     return ResponseModel(data=SupplierOut.model_validate(supplier))
 
 

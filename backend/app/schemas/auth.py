@@ -12,7 +12,6 @@ class LoginUserInfo(BaseModel):
     id: int
     name: str
     role: str
-    must_change_password: bool
 
 
 class TokenResponse(BaseModel):
@@ -31,9 +30,8 @@ class UserOut(BaseModel):
     name: str
     phone: str | None
     role: str
-    is_active: bool
-    must_change_password: bool
-    last_login_at: datetime | None
+    status: str
+    last_login: datetime | None
     created_at: datetime
 
     model_config = {"from_attributes": True}

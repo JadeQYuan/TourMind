@@ -34,6 +34,34 @@ const drawerViewOpen = ref(false)
 const drawerViewData = ref<Order | null>(null)
 const drawerLoading = ref(false)
 
+const updateBalanceAmount = () => {
+  if (form.value.price != null && form.value.deposit != null) {
+    form.value.balance_amount = form.value.price - form.value.deposit
+  }
+}
+
+const onDepositDueDateChange = (value: string) => {
+  if (!value) {
+    form.value.deposit_due_date = new Date().toISOString().split('T')[0]
+  }
+}
+
+const balanceAmountPlaceholder = computed(() => {
+  if (form.value.price != null && form.value.deposit != null) {
+    return `默认 ${form.value.price - form.value.deposit}`
+  }
+  return '价格 - 定金'
+})
+
+const balanceDueDatePlaceholder = computed(() => {
+  if (form.value.travel_date && form.value.days) {
+    const date = new Date(form.value.travel_date)
+    date.setDate(date.getDate() + form.value.days - 1)
+    return date.toISOString().split('T')[0]
+  }
+  return '行程结束日期'
+})
+
 const columns = [
   { title: '', key: '_seq', width: 50, align: 'center' as const },
   { title: '订单编号', dataIndex: 'order_no', width: 160, ellipsis: true },
@@ -89,14 +117,12 @@ async function openEdit(record: Order) {
 function onProductChange(productId: number) {
   const p = products.value.find(x => x.id === productId)
   if (p) {
-    form.value.product_name = p.name
     if (p.days) form.value.days = p.days
   }
 }
 
 function onSupplierChange(supplierId: number) {
-  const s = suppliers.value.find(x => x.id === supplierId)
-  if (s) form.value.supplier_name = s.name
+  // 不再需要设置 supplier_name
 }
 
 async function openViewDrawer(id: number) {

@@ -15,10 +15,10 @@ const { isMobile } = useBreakpoint()
 const users = ref<UserInfo[]>([])
 const total = ref(0)
 const loading = ref(false)
-const query = reactive({ page: 1, page_size: 20, keyword: undefined as string | undefined, role: undefined as string | undefined, is_active: true as boolean | undefined })
+const query = reactive({ page: 1, page_size: 20, keyword: undefined as string | undefined, role: undefined as string | undefined, status: 'enabled' as string | undefined })
 const modalOpen = ref(false)
 const editingId = ref<number | null>(null)
-const form = ref<any>({ role: 'assistant', is_active: true })
+const form = ref<any>({ role: 'assistant', status: 'enabled' })
 
 const drawerViewOpen = ref(false)
 const drawerViewData = ref<UserInfo | null>(null)
@@ -43,7 +43,7 @@ async function fetchList() {
   loading.value = false
 }
 
-function openCreate() { editingId.value = null; form.value = { role: 'assistant', is_active: true }; modalOpen.value = true }
+function openCreate() { editingId.value = null; form.value = { role: 'assistant', status: 'enabled' }; modalOpen.value = true }
 function openEdit(u: UserInfo) {
   if (u.role === 'system_admin') { message.warning('系统管理员不可编辑'); return }
   editingId.value = u.id; form.value = { ...u, phone: u.phone ?? undefined }; modalOpen.value = true
@@ -96,32 +96,32 @@ async function resetPwd(u: UserInfo) {
 async function toggleActive(u: UserInfo) {
   if (u.role === 'system_admin') { message.warning('系统管理员不可操作'); return }
   await userApi.patchStatus(u.id)
-  message.success(u.is_active ? '已禁用' : '已启用')
+  message.success(u.status === 'enabled' ? '已禁用' : '已启用')
   fetchList()
 }
 
 const mobileFilterOpen = ref(false)
-const mobileFilter = reactive({ keyword: undefined as string | undefined, role: undefined as string | undefined, is_active: true as boolean | undefined })
+const mobileFilter = reactive({ keyword: undefined as string | undefined, role: undefined as string | undefined, status: 'enabled' as string | undefined })
 
 const activeFilterCount = computed(() => {
   let n = 0
   if (query.keyword) n++
   if (query.role) n++
-  if (query.is_active !== true) n++
+  if (query.status !== 'enabled') n++
   return n
 })
 
 function openMobileFilter() {
   mobileFilter.keyword = query.keyword
   mobileFilter.role = query.role
-  mobileFilter.is_active = query.is_active
+  mobileFilter.status = query.status
   mobileFilterOpen.value = true
 }
 
 function applyMobileFilter() {
   query.keyword = mobileFilter.keyword
   query.role = mobileFilter.role
-  query.is_active = mobileFilter.is_active
+  query.status = mobileFilter.status
   query.page = 1
   mobileFilterOpen.value = false
   fetchList()
@@ -130,7 +130,7 @@ function applyMobileFilter() {
 function resetMobileFilter() {
   mobileFilter.keyword = undefined
   mobileFilter.role = undefined
-  mobileFilter.is_active = true
+  mobileFilter.status = 'enabled'
 }
 
 const columns = [
@@ -138,8 +138,8 @@ const columns = [
   { title: '姓名', dataIndex: 'name', width: 100 },
   { title: '手机号', dataIndex: 'phone', width: 140 },
   { title: '角色', key: 'role', width: 110 },
-  { title: '状态', key: 'is_active', width: 80, align: 'center' },
-  { title: '最后登录', dataIndex: 'last_login_at', width: 160, customRender: ({ text }: any) => text ? text.slice(0, 16).replace('T', ' ') : '-' },
+  { title: '状态', key: 'status', width: 80, align: 'center' },
+  { title: '最后登录', dataIndex: 'last_login', width: 160, customRender: ({ text }: any) => text ? text.slice(0, 16).replace('T', ' ') : '-' },
   { title: '操作', key: 'action', width: 210, fixed: 'right' as const },
 ]
 </script>
@@ -160,13 +160,13 @@ const columns = [
           </a-select>
         </a-form-item>
         <a-form-item label="状态">
-          <a-select v-model:value="query.is_active" placeholder="全部" allow-clear style="width:90px" @change="() => { query.page = 1; fetchList() }">
-            <a-select-option :value="true">启用</a-select-option>
-            <a-select-option :value="false">禁用</a-select-option>
+          <a-select v-model:value="query.status" placeholder="全部" allow-clear style="width:90px" @change="() => { query.page = 1; fetchList() }">
+            <a-select-option value="enabled">启用</a-select-option>
+            <a-select-option value="disabled">禁用</a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item>
-          <a-button @click="() => { query.keyword = undefined; query.role = undefined; query.is_active = true; query.page = 1; fetchList() }">重置</a-button>
+          <a-button @click="() => { query.keyword = undefined; query.role = undefined; query.status = 'enabled'; query.page = 1; fetchList() }">重置</a-button>
         </a-form-item>
       </a-form>
       <a-badge v-if="isMobile" :count="activeFilterCount" :offset="[-2, 2]">
@@ -190,12 +190,12 @@ const columns = [
                       <a-tag :color="ROLE_COLOR[record.role]" style="margin:0">{{ ROLES[record.role] ?? record.role }}</a-tag>
                     </span>
                   </div>
-                  <a-tag :color="record.is_active ? 'green' : 'default'" style="margin:0">{{ record.is_active ? '启用' : '禁用' }}</a-tag>
+                  <a-tag :color="record.status === 'enabled' ? 'green' : 'default'" style="margin:0">{{ record.status === 'enabled' ? '启用' : '禁用' }}</a-tag>
                 </div>
                 <div style="display:flex;justify-content:flex-end;gap:6px;margin-top:8px;flex-wrap:wrap">
                   <a-button size="small" @click="openViewDrawer(record.id)">查看</a-button>
                   <a-button size="small" :disabled="record.role === 'system_admin'" @click="openEdit(record)">编辑</a-button>
-                  <a-button size="small" :disabled="record.role === 'system_admin'" @click="toggleActive(record)">{{ record.is_active ? '禁用' : '启用' }}</a-button>
+                  <a-button size="small" :disabled="record.role === 'system_admin'" @click="toggleActive(record)">{{ record.status === 'enabled' ? '禁用' : '启用' }}</a-button>
                   <a-button size="small" :disabled="record.role === 'system_admin'" @click="resetPwd(record)">重置密码</a-button>
                 </div>
               </a-card>
@@ -219,14 +219,14 @@ const columns = [
         <template v-else-if="column.key === 'role'">
           <a-tag :color="ROLE_COLOR[record.role]">{{ ROLES[record.role] ?? record.role }}</a-tag>
         </template>
-        <template v-else-if="column.key === 'is_active'">
-          <a-tag :color="record.is_active ? 'green' : 'default'">{{ record.is_active ? '启用' : '禁用' }}</a-tag>
+        <template v-else-if="column.key === 'status'">
+          <a-tag :color="record.status === 'enabled' ? 'green' : 'default'">{{ record.status === 'enabled' ? '启用' : '禁用' }}</a-tag>
         </template>
         <template v-else-if="column.key === 'action'">
           <a-space>
             <a-button size="small" @click="openViewDrawer(record.id)">查看</a-button>
             <a-button size="small" :disabled="record.role === 'system_admin'" @click="openEdit(record)">编辑</a-button>
-            <a-button size="small" :disabled="record.role === 'system_admin'" @click="toggleActive(record)">{{ record.is_active ? '禁用' : '启用' }}</a-button>
+            <a-button size="small" :disabled="record.role === 'system_admin'" @click="toggleActive(record)">{{ record.status === 'enabled' ? '禁用' : '启用' }}</a-button>
             <a-button size="small" :disabled="record.role === 'system_admin'" @click="resetPwd(record)">重置密码</a-button>
           </a-space>
         </template>
@@ -246,9 +246,9 @@ const columns = [
           </a-select>
         </a-form-item>
         <a-form-item label="状态">
-          <a-select v-model:value="mobileFilter.is_active" placeholder="全部" allow-clear style="width:100%">
-            <a-select-option :value="true">启用</a-select-option>
-            <a-select-option :value="false">禁用</a-select-option>
+          <a-select v-model:value="mobileFilter.status" placeholder="全部" allow-clear style="width:100%">
+            <a-select-option value="enabled">启用</a-select-option>
+            <a-select-option value="disabled">禁用</a-select-option>
           </a-select>
         </a-form-item>
       </a-form>
@@ -277,9 +277,10 @@ const columns = [
               <a-tag :color="ROLE_COLOR[drawerViewData.role]">{{ ROLES[drawerViewData.role] ?? drawerViewData.role }}</a-tag>
             </a-descriptions-item>
             <a-descriptions-item label="状态">
-              <a-tag :color="drawerViewData.is_active ? 'green' : 'default'">{{ drawerViewData.is_active ? '启用' : '禁用' }}</a-tag>
+              <a-tag :color="drawerViewData.status === 'enabled' ? 'green' : 'default'">{{ drawerViewData.status === 'enabled' ? '启用' : '禁用' }}</a-tag>
             </a-descriptions-item>
-            <a-descriptions-item label="最后登录">{{ drawerViewData.last_login_at ? drawerViewData.last_login_at.slice(0, 16).replace('T', ' ') : '-' }}</a-descriptions-item>
+            <a-descriptions-item label="最后登录">{{ drawerViewData.last_login ? drawerViewData.last_login.slice(0, 16).replace('T', ' ') : '-' }}</a-descriptions-item>
+            <a-descriptions-item label="备注">{{ drawerViewData.remark ?? '-' }}</a-descriptions-item>
             <a-descriptions-item label="创建时间">{{ drawerViewData.created_at?.slice(0, 16).replace('T', ' ') }}</a-descriptions-item>
           </a-descriptions>
         </template>
@@ -304,6 +305,15 @@ const columns = [
             <a-select-option value="admin">管理员</a-select-option>
             <a-select-option value="assistant">助理</a-select-option>
           </a-select>
+        </a-form-item>
+        <a-form-item label="状态">
+          <a-select v-model:value="form.status" style="width:100%">
+            <a-select-option value="enabled">启用</a-select-option>
+            <a-select-option value="disabled">禁用</a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item label="备注">
+          <a-textarea v-model:value="form.remark" placeholder="请输入备注" :rows="3" allow-clear />
         </a-form-item>
         <a-alert v-if="!editingId" type="info" message="创建后系统自动生成初始密码" show-icon />
       </a-form>

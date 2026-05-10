@@ -14,7 +14,6 @@ async def list_products(
     db: DBDep,
     _: CurrentUser,
     keyword: str | None = None,
-    product_type: str | None = None,
     status: str | None = None,
     page: int = 1,
     page_size: int = 50,
@@ -22,8 +21,6 @@ async def list_products(
     stmt = select(Product)
     if keyword:
         stmt = stmt.where(Product.name.ilike(f"%{keyword}%"))
-    if product_type:
-        stmt = stmt.where(Product.product_type == product_type)
     if status:
         stmt = stmt.where(Product.status == status)
     stmt = stmt.order_by(Product.created_at.desc())
@@ -48,7 +45,7 @@ async def create_product(request: Request, body: ProductCreate, db: DBDep, user:
     db.add(product)
     await db.commit()
     await db.refresh(product)
-    await write_log(db, request, user, "product", product.id, "create", {"name": product.name})
+    # await write_log(db, request, user, "product", product.id, "create", {"name": product.name})
     return ResponseModel(data=ProductOut.model_validate(product))
 
 
@@ -62,7 +59,7 @@ async def update_product(request: Request, product_id: int, body: ProductUpdate,
         setattr(product, field, value)
     await db.commit()
     await db.refresh(product)
-    await write_log(db, request, user, "product", product_id, "update", {})
+    # await write_log(db, request, user, "product", product_id, "update", {})
     return ResponseModel(data=ProductOut.model_validate(product))
 
 
@@ -74,20 +71,18 @@ async def copy_product(product_id: int, db: DBDep, user: CurrentUser):
         raise HTTPException(status_code=404, detail="产品不存在")
     new_product = Product(
         name=f"{src.name}（复制）",
-        product_type=src.product_type,
         origin=src.origin,
         destination=src.destination,
         days=src.days,
-        reference_price=src.reference_price,
+        price=src.price,
         includes=src.includes,
         excludes=src.excludes,
         cancellation_policy=src.cancellation_policy,
         travel_notice=src.travel_notice,
         important_tips=src.important_tips,
         itinerary_template=src.itinerary_template,
-        tags=src.tags,
-        notes=src.notes,
-        status="inactive",
+        remark=src.remark,
+        status="disabled",
         created_by=user.id,
     )
     db.add(new_product)
@@ -102,7 +97,7 @@ async def toggle_product_status(product_id: int, db: DBDep, _: CurrentUser):
     product = result.scalar_one_or_none()
     if not product:
         raise HTTPException(status_code=404, detail="产品不存在")
-    product.status = "inactive" if product.status == "active" else "active"
+    product.status = "disabled" if product.status == "enabled" else "enabled"
     await db.commit()
     await db.refresh(product)
     return ResponseModel(data=ProductOut.model_validate(product))

@@ -17,7 +17,6 @@ class OrderCreate(BaseModel):
     price: Optional[Decimal] = None
     deposit: Optional[Decimal] = None
     supplier_id: Optional[int] = None
-    supplier_name: Optional[str] = None
     cost: Optional[Decimal] = None
     remarks: Optional[str] = None
     deposit_due_date: Optional[date] = None
@@ -27,7 +26,6 @@ class OrderCreate(BaseModel):
 
 class OrderUpdate(BaseModel):
     product_id: Optional[int] = None
-    product_name: Optional[str] = None
     customer_name: Optional[str] = None
     customer_phone: Optional[str] = None
     travel_date: Optional[date] = None
@@ -36,7 +34,6 @@ class OrderUpdate(BaseModel):
     price: Optional[Decimal] = None
     deposit: Optional[Decimal] = None
     supplier_id: Optional[int] = None
-    supplier_name: Optional[str] = None
     cost: Optional[Decimal] = None
     remarks: Optional[str] = None
     deposit_due_date: Optional[date] = None
@@ -52,6 +49,7 @@ class OrderListItem(BaseModel):
     id: int
     order_no: str
     product_id: Optional[int]
+    product_name: Optional[str]
     customer_name: str
     customer_phone: Optional[str]
     travel_date: Optional[date]
@@ -69,6 +67,15 @@ class OrderListItem(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+    @model_validator(mode="before")
+    @classmethod
+    def get_related_names(cls, data: any) -> any:
+        if hasattr(data, "product") and data.product:
+            data.product_name = data.product.name
+        if hasattr(data, "supplier") and data.supplier:
+            data.supplier_name = data.supplier.name
+        return data
 
 
 class OrderOut(OrderListItem):

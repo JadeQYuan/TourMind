@@ -54,7 +54,7 @@ async def list_bills(
     _: CurrentUser,
     bill_type: str | None = None,
     contract_id: int | None = None,
-    customer_order_id: int | None = None,
+    order_id: int | None = None,
     account_id: int | None = None,
     start_date: date | None = None,
     end_date: date | None = None,
@@ -66,8 +66,8 @@ async def list_bills(
         stmt = stmt.where(Bill.bill_type == bill_type)
     if contract_id:
         stmt = stmt.where(Bill.contract_id == contract_id)
-    if customer_order_id:
-        stmt = stmt.where(Bill.customer_order_id == customer_order_id)
+    if order_id:
+        stmt = stmt.where(Bill.order_id == order_id)
     if account_id:
         stmt = stmt.where(Bill.account_id == account_id)
     if start_date:

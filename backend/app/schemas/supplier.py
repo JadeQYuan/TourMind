@@ -7,17 +7,16 @@ class SupplierCreate(BaseModel):
     name: str
     contact_person: Optional[str] = None
     contact_phone: Optional[str] = None
-    address: Optional[str] = None
-    notes: Optional[str] = None
+    remark: Optional[str] = None
+    status: Optional[str] = "enabled"
 
 
 class SupplierUpdate(BaseModel):
     name: Optional[str] = None
     contact_person: Optional[str] = None
     contact_phone: Optional[str] = None
-    address: Optional[str] = None
-    notes: Optional[str] = None
-    is_active: Optional[bool] = None
+    remark: Optional[str] = None
+    status: Optional[str] = None
 
 
 class SupplierOut(BaseModel):
@@ -25,9 +24,8 @@ class SupplierOut(BaseModel):
     name: str
     contact_person: Optional[str]
     contact_phone: Optional[str]
-    address: Optional[str]
-    notes: Optional[str]
-    is_active: bool
+    remark: Optional[str]
+    status: str
     created_at: datetime
 
     model_config = {"from_attributes": True}

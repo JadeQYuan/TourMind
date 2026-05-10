@@ -3,13 +3,12 @@ export type UserRole = 'system_admin' | 'admin' | 'assistant'
 
 export interface UserInfo {
   id: number
-  job_number: string
   name: string
   phone: string | null
   role: UserRole
-  is_active: boolean
-  must_change_password: boolean
-  last_login_at: string | null
+  status: string
+  last_login: string | null
+  remark: string | null
   created_at: string
 }
 
@@ -19,8 +18,8 @@ export interface Supplier {
   name: string
   contact_person: string | null
   contact_phone: string | null
-  notes: string | null
-  is_active: boolean
+  remark: string | null
+  status: string
   created_at: string
 }
 
@@ -28,13 +27,13 @@ export interface Supplier {
 export interface Account {
   id: number
   name: string
-  account_type: string
-  description: string | null
+  type: string
   user_id: number | null
   user_name: string | null
-  notes: string | null
-  is_active: boolean
+  remark: string | null
+  status: string
   created_at: string
+  updated_at: string
 }
 
 // ── 产品 ───────────────────────────────────────────────────────────
@@ -48,21 +47,22 @@ export interface ProductTemplateDay {
 export interface Product {
   id: number
   name: string
+  origin: string | null
   destination: string
   days: number
-  reference_price: number | null
+  price: number
   includes: string | null
   excludes: string | null
   cancellation_policy: string | null
   travel_notice: string | null
   important_tips: string | null
   itinerary_template: ProductTemplateDay[] | null
-  notes: string | null
+  remark: string | null
   status: string
   created_at: string
 }
 
-export type ProductListItem = Pick<Product, 'id' | 'name' | 'destination' | 'days' | 'reference_price' | 'status' | 'created_at'>
+export type ProductListItem = Pick<Product, 'id' | 'name' | 'destination' | 'days' | 'price' | 'status' | 'created_at'>
 export type ProductCreate = Omit<Product, 'id' | 'created_at'>
 export type ProductUpdate = Partial<ProductCreate>
 
@@ -73,7 +73,6 @@ export interface Order {
   id: number
   order_no: string
   product_id: number | null
-  product_name: string | null
   customer_name: string
   customer_phone: string
   travel_date: string
@@ -88,7 +87,6 @@ export interface Order {
   /** 尾款到账日期，默认行程结束日期 */
   balance_due_date: string | null
   supplier_id: number | null
-  supplier_name: string | null
   cost: number | null
   profit: number | null
   status: OrderStatus
@@ -118,7 +116,6 @@ export interface Itinerary {
   order_id: number
   order_no: string
   customer_order_id: number | null
-  product_name: string | null
   customer_name: string
   customer_phone: string
   destination: string

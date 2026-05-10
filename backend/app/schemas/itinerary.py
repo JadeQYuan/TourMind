@@ -1,14 +1,9 @@
 from pydantic import BaseModel
 from datetime import date, datetime
-from decimal import Decimal
 from typing import Literal
 
 
 ItineraryStatus = str  # not_started / in_progress / completed
-OrderStatus = str  # pending / confirmed / cancelled
-ServiceType = Literal[
-    "transport", "accommodation", "attraction", "meal", "guide", "insurance", "other"
-]
 
 
 # ── 每日明细 ──────────────────────────────────────────────────────
@@ -48,65 +43,6 @@ class DayOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
-# ── 订单 ──────────────────────────────────────────────────────────
-
-class OrderCreate(BaseModel):
-    supplier_id: int | None = None
-    service_type: ServiceType
-    amount: Decimal
-    order_date: date
-    related_days: list[int] | None = None
-    notes: str | None = None
-
-
-class OrderUpdate(BaseModel):
-    supplier_id: int | None = None
-    service_type: ServiceType | None = None
-    amount: Decimal | None = None
-    order_date: date | None = None
-    related_days: list[int] | None = None
-    notes: str | None = None
-    status: OrderStatus | None = None
-
-
-class OrderAttachmentOut(BaseModel):
-    id: int
-    file_key: str
-    file_url: str
-    original_name: str
-
-    model_config = {"from_attributes": True}
-
-
-class OrderOut(BaseModel):
-    id: int
-    supplier_id: int | None
-    service_type: str
-    amount: Decimal
-    order_date: date
-    related_days: list[int] | None
-    status: str
-    notes: str | None
-    attachments: list[OrderAttachmentOut] = []
-    created_at: datetime
-
-    model_config = {"from_attributes": True}
-
-
-class OrderListOut(BaseModel):
-    """跨行程订单汇总视图"""
-    id: int
-    product_id: int | None
-    product_name: str | None
-    supplier_id: int | None
-    supplier_name: str | None
-    amount: Decimal
-    order_date: date
-    status: str
-    notes: str | None
-    created_at: datetime
-
-
 # ── 行程 ──────────────────────────────────────────────────────────
 
 class ItineraryCreate(BaseModel):
@@ -121,7 +57,7 @@ class ItineraryCreate(BaseModel):
     customer_phone: str
     pax: int
     travelers: str | None = None
-    customer_order_id: int | None = None
+    order_id: int | None = None
     days_detail: list[DayCreate] = []
 
 
@@ -137,7 +73,7 @@ class ItineraryUpdate(BaseModel):
     customer_phone: str | None = None
     pax: int | None = None
     travelers: str | None = None
-    customer_order_id: int | None = None
+    order_id: int | None = None
     status: str | None = None
     days_detail: list[DayCreate] | None = None
 
@@ -151,7 +87,7 @@ class ItineraryListItem(BaseModel):
     departure_date: date
     days: int
     status: str
-    customer_order_id: int | None
+    order_id: int | None
     share_token: str | None
     created_at: datetime
 
@@ -172,12 +108,11 @@ class ItineraryOut(BaseModel):
     pax: int
     travelers: str | None
     status: str
-    customer_order_id: int | None
+    order_id: int | None
     share_token: str | None
     created_at: datetime
     updated_at: datetime
     days_detail: list[DayOut] = []
-    orders: list[OrderOut] = []
 
     model_config = {"from_attributes": True}
 

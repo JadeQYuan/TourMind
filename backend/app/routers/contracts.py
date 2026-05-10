@@ -8,6 +8,7 @@ from app.core.audit import write_log
 from app.models.contract import Contract, ContractDay
 from app.models.itinerary import Itinerary
 from app.models.bill import Bill
+from app.models.order import Order
 from app.schemas.contract import (
     ContractCreate, ContractUpdate, ContractOut, ContractListItem,
     ContractStatusUpdate, ContractPublicOut,
@@ -83,11 +84,11 @@ async def list_contracts(
 @router.post("", response_model=ResponseModel)
 async def create_contract(request: Request, body: ContractCreate, db: DBDep, user: CurrentUser):
     # 参数校验
-    if not body.customer_order_id:
-        raise HTTPException(status_code=422, detail="customer_order_id 必填")
+    if not body.order_id:
+        raise HTTPException(status_code=422, detail="order_id 必填")
     if not body.party_a or not body.party_a_phone or not body.party_b or not body.party_b_phone:
         raise HTTPException(status_code=422, detail="甲乙方及联系方式必填")
-    # Auto-populate from CustomerOrder if provided
+    # Auto-populate from Order if provided
     customer_name = ""
     customer_phone = ""
     pax = 1
@@ -100,10 +101,9 @@ async def create_contract(request: Request, body: ContractCreate, db: DBDep, use
     party_b = body.party_b
     party_b_phone = body.party_b_phone
 
-    if body.customer_order_id:
-        from app.models.order import CustomerOrder
+    if body.order_id:
         order_res = await db.execute(
-            select(CustomerOrder).where(CustomerOrder.id == body.customer_order_id)
+            select(Order).where(Order.id == body.order_id)
         )
         order = order_res.scalar_one_or_none()
         if not order:
@@ -115,9 +115,8 @@ async def create_contract(request: Request, body: ContractCreate, db: DBDep, use
         return_date = order.travel_date  # caller can update via PUT
         # 行程明细通过订单接口获取，接口防御性校验
         try:
-            from app.models.itinerary import Itinerary
             itin_result = await db.execute(
-                select(Itinerary).where(Itinerary.customer_order_id == order.id)
+                select(Itinerary).where(Itinerary.order_id == order.id)
             )
             itins = itin_result.scalars().all()
             if not itins:
@@ -149,7 +148,7 @@ async def create_contract(request: Request, body: ContractCreate, db: DBDep, use
         from datetime import timedelta
         return_date = itin.departure_date + timedelta(days=(itin.days or 1) - 1)
     else:
-        raise HTTPException(status_code=400, detail="必须提供 customer_order_id 或 source_itinerary_id")
+        raise HTTPException(status_code=400, detail="必须提供 order_id 或 source_itinerary_id")
 
     if not departure_date:
         raise HTTPException(status_code=400, detail="无法确定出发日期")
@@ -158,7 +157,7 @@ async def create_contract(request: Request, body: ContractCreate, db: DBDep, use
 
     contract = Contract(
         contract_no=_next_contract_no(),
-        customer_order_id=body.customer_order_id,
+        order_id=body.order_id,
         source_itinerary_id=body.source_itinerary_id,
         customer_name=customer_name,
         customer_phone=customer_phone,
@@ -213,9 +212,9 @@ async def update_contract(request: Request, contract_id: int, body: ContractUpda
     # 参数校验
     if not body.party_a or not body.party_a_phone or not body.party_b or not body.party_b_phone:
         raise HTTPException(status_code=422, detail="甲乙方及联系方式必填")
-    if not contract.customer_order_id:
-        raise HTTPException(status_code=422, detail="customer_order_id 必填")
     contract = await _get_contract(contract_id, db)
+    if not contract.order_id:
+        raise HTTPException(status_code=422, detail="order_id 必填")
     if contract.status not in ("pending_sign",):
         raise HTTPException(status_code=400, detail="仅待签署状态可编辑")
 
@@ -276,7 +275,7 @@ async def revoke_share(request: Request, contract_id: int, db: DBDep, user: Curr
     return ResponseModel(message="分享已撤销")
 
 
-# ── 外部签署端点（无需登录） ────────────────────────────────────────
+# ── 外部签署端点（无需登录）─────────────────────────────────────────
 
 public_router = APIRouter(prefix="/public/contracts", tags=["合同签署（外部）"])
 

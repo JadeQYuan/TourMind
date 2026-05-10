@@ -1,13 +1,13 @@
-from datetime import date
+from datetime import date, timedelta
 from fastapi import APIRouter, HTTPException, Depends, Query, Request
 from sqlalchemy import select, func, or_
 from app.core.deps import DBDep, CurrentUser, require_roles
 from app.core.audit import write_log
-from app.models.order import CustomerOrder
+from app.models.order import Order
 from app.schemas.order import OrderCreate, OrderUpdate, OrderOut, OrderListItem, OrderListResponse, OrderStatusUpdate
 from app.schemas.common import ResponseModel
 
-router = APIRouter(prefix="/orders", tags=["客户订单"])
+router = APIRouter(prefix="/orders", tags=["订单"])
 
 _STATUS_TRANSITIONS = {
     "pending_deposit": {"pending_payment"},
@@ -20,8 +20,8 @@ async def _gen_order_no(db) -> str:
     today = date.today()
     prefix = f"ORD-{today.strftime('%Y%m')}-"
     count_result = await db.execute(
-        select(func.count(CustomerOrder.id)).where(
-            CustomerOrder.order_no.like(f"{prefix}%")
+        select(func.count(Order.id)).where(
+            Order.order_no.like(f"{prefix}%")
         )
     )
     count = count_result.scalar_one()
@@ -39,27 +39,29 @@ async def list_orders(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
 ):
-    stmt = select(CustomerOrder)
+    stmt = select(Order).options(
+        joinedload(Order.product),
+        joinedload(Order.supplier),
+    )
     if status:
-        stmt = stmt.where(CustomerOrder.status == status)
+        stmt = stmt.where(Order.status == status)
     if keyword:
         kw = f"%{keyword}%"
         stmt = stmt.where(
             or_(
-                CustomerOrder.customer_name.ilike(kw),
-                CustomerOrder.order_no.ilike(kw),
-                CustomerOrder.product_name.ilike(kw),
+                Order.customer_name.ilike(kw),
+                Order.order_no.ilike(kw),
             )
         )
     if start_date:
-        stmt = stmt.where(CustomerOrder.travel_date >= start_date)
+        stmt = stmt.where(Order.travel_date >= start_date)
     if end_date:
-        stmt = stmt.where(CustomerOrder.travel_date <= end_date)
+        stmt = stmt.where(Order.travel_date <= end_date)
 
     count_result = await db.execute(select(func.count()).select_from(stmt.subquery()))
     total = count_result.scalar_one()
 
-    stmt = stmt.order_by(CustomerOrder.created_at.desc()).offset((page - 1) * page_size).limit(page_size)
+    stmt = stmt.order_by(Order.created_at.desc()).offset((page - 1) * page_size).limit(page_size)
     rows = (await db.execute(stmt)).scalars().all()
 
     return ResponseModel(data=OrderListResponse(
@@ -72,7 +74,7 @@ async def list_orders(
 
 @router.get("/{order_id}", response_model=ResponseModel)
 async def get_order(order_id: int, db: DBDep, _: CurrentUser):
-    result = await db.execute(select(CustomerOrder).where(CustomerOrder.id == order_id))
+    result = await db.execute(select(Order).where(Order.id == order_id))
     order = result.scalar_one_or_none()
     if not order:
         raise HTTPException(status_code=404, detail="订单不存在")
@@ -105,7 +107,7 @@ async def create_order(body: OrderCreate, db: DBDep, user: CurrentUser, request:
         if price is not None and deposit is not None:
             values["balance_amount"] = price - deposit
 
-    order = CustomerOrder(
+    order = Order(
         **values,
         order_no=order_no,
         profit=profit,
@@ -115,7 +117,7 @@ async def create_order(body: OrderCreate, db: DBDep, user: CurrentUser, request:
     db.add(order)
     await db.flush()
     # await write_log(
-    #     db, user.id, user.name,
+    #     db, user.id, user.full_name,
     #     action="create_order",
     #     resource_type="order",
     #     resource_id=str(order.id),
@@ -123,12 +125,12 @@ async def create_order(body: OrderCreate, db: DBDep, user: CurrentUser, request:
     # )
     await db.commit()
     await db.refresh(order)
-    return ResponseModel(data=OrderOut.model_validate(order))
+    return ResponseModel()
 
 
 @router.put("/{order_id}", response_model=ResponseModel)
 async def update_order(order_id: int, body: OrderUpdate, db: DBDep, user: CurrentUser, request: Request):
-    result = await db.execute(select(CustomerOrder).where(CustomerOrder.id == order_id))
+    result = await db.execute(select(Order).where(Order.id == order_id))
     order = result.scalar_one_or_none()
     if not order:
         raise HTTPException(status_code=404, detail="订单不存在")
@@ -157,16 +159,16 @@ async def update_order(order_id: int, body: OrderUpdate, db: DBDep, user: Curren
         order.profit = order.price - order.cost
 
     await db.flush()
-    await write_log(
-        db, user.id, user.full_name,
-        action="update_order",
-        resource_type="order",
-        resource_id=str(order_id),
-        ip_address=request.client.host if request.client else None,
-    )
+    # await write_log(
+    #     db, user.id, user.full_name,
+    #     action="update_order",
+    #     resource_type="order",
+    #     resource_id=str(order.id),
+    #     ip_address=request.client.host if request.client else None,
+    # )
     await db.commit()
     await db.refresh(order)
-    return ResponseModel(data=OrderOut.model_validate(order))
+    return ResponseModel()
 
 
 @router.patch(
@@ -175,7 +177,7 @@ async def update_order(order_id: int, body: OrderUpdate, db: DBDep, user: Curren
     dependencies=[Depends(require_roles("admin", "system_admin"))],
 )
 async def update_order_status(order_id: int, body: OrderStatusUpdate, db: DBDep, user: CurrentUser, request: Request):
-    result = await db.execute(select(CustomerOrder).where(CustomerOrder.id == order_id))
+    result = await db.execute(select(Order).where(Order.id == order_id))
     order = result.scalar_one_or_none()
     if not order:
         raise HTTPException(status_code=404, detail="订单不存在")
@@ -187,17 +189,17 @@ async def update_order_status(order_id: int, body: OrderStatusUpdate, db: DBDep,
     old_status = order.status
     order.status = body.status
     await db.flush()
-    await write_log(
-        db, user.id, user.full_name,
-        action="update_order_status",
-        resource_type="order",
-        resource_id=str(order_id),
-        detail=f"{old_status} → {body.status}",
-        ip_address=request.client.host if request.client else None,
-    )
+    # await write_log(
+    #     db, user.id, user.full_name,
+    #     action="update_order_status",
+    #     resource_type="order",
+    #     resource_id=str(order.id),
+    #     detail=f"{old_status} → {body.status}",
+    #     ip_address=request.client.host if request.client else None,
+    # )
     await db.commit()
     await db.refresh(order)
-    return ResponseModel(data=OrderOut.model_validate(order))
+    return ResponseModel()
 
 
 @router.delete(
@@ -206,7 +208,7 @@ async def update_order_status(order_id: int, body: OrderStatusUpdate, db: DBDep,
     dependencies=[Depends(require_roles("admin", "system_admin"))],
 )
 async def delete_order(order_id: int, db: DBDep, user: CurrentUser, request: Request):
-    result = await db.execute(select(CustomerOrder).where(CustomerOrder.id == order_id))
+    result = await db.execute(select(Order).where(Order.id == order_id))
     order = result.scalar_one_or_none()
     if not order:
         raise HTTPException(status_code=404, detail="订单不存在")
@@ -214,68 +216,9 @@ async def delete_order(order_id: int, db: DBDep, user: CurrentUser, request: Req
         db, user.id, user.full_name,
         action="delete_order",
         resource_type="order",
-        resource_id=str(order_id),
+        resource_id=str(order.id),
         ip_address=request.client.host if request.client else None,
     )
     await db.delete(order)
     await db.commit()
     return ResponseModel(message="删除成功")
-
-
-
-@router.get("", response_model=ResponseModel)
-async def list_all_orders(
-    db: DBDep,
-    _: CurrentUser,
-    status: str | None = None,
-    product_id: int | None = None,
-    supplier_id: int | None = None,
-    page: int = 1,
-    page_size: int = 50,
-):
-    stmt = (
-        select(Order)
-        .options(selectinload(Order.product))
-        .join(Order.product)
-        .options(selectinload(Order.supplier))
-        .join(Order.supplier)
-    )
-    if status:
-        stmt = stmt.where(Order.status == status)
-    if product_id:
-        stmt = stmt.where(Order.product_id == product_id)
-    if supplier_id:
-        stmt = stmt.where(Order.supplier_id == supplier_id) 
-    stmt = stmt.order_by(Order.order_date.desc()).offset((page - 1) * page_size).limit(page_size)
-
-    result = await db.execute(stmt)
-    orders = result.scalars().all()
-
-    data = [
-        OrderListOut(
-            id=o.id,
-            product_id=o.product_id,
-            product_name=o.product.name if o.product_id else None,
-            supplier_id=o.supplier_id,
-            supplier_name=o.supplier.name if o.supplier_id else None,
-            amount=o.amount,
-            order_date=o.order_date,
-            status=o.status,
-            notes=o.notes,
-            created_at=o.created_at,
-        )
-        for o in orders
-    ]
-    return ResponseModel(data=data)
-
-
-@router.patch("/{order_id}/status", response_model=ResponseModel)
-async def update_order_status(order_id: int, new_status: str, db: DBDep, _: CurrentUser):
-    result = await db.execute(select(Order).where(Order.id == order_id))
-    order = result.scalar_one_or_none()
-    if not order:
-        from fastapi import HTTPException
-        raise HTTPException(status_code=404, detail="订单不存在")
-    order.status = new_status
-    await db.commit()
-    return ResponseModel(message="状态已更新")

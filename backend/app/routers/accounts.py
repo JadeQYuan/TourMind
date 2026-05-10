@@ -27,10 +27,10 @@ async def _resolve_user_names(db, accounts: list) -> list[AccountOut]:
 
 
 @router.get("", response_model=ResponseModel)
-async def list_accounts(db: DBDep, _: CurrentUser, is_active: bool | None = None):
+async def list_accounts(db: DBDep, _: CurrentUser, status: str | None = None):
     stmt = select(Account)
-    if is_active is not None:
-        stmt = stmt.where(Account.is_active == is_active)
+    if status is not None:
+        stmt = stmt.where(Account.status == status)
     result = await db.execute(stmt.order_by(Account.name))
     accounts = result.scalars().all()
     return ResponseModel(data=await _resolve_user_names(db, accounts))

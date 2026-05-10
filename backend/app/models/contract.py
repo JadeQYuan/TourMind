@@ -12,8 +12,8 @@ class Contract(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     contract_no: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
-    customer_order_id: Mapped[int | None] = mapped_column(
-        ForeignKey("customer_orders.id", ondelete="SET NULL"), nullable=True
+    order_id: Mapped[int | None] = mapped_column(
+        ForeignKey("orders.id", ondelete="SET NULL"), nullable=True
     )
     source_itinerary_id: Mapped[int | None] = mapped_column(
         ForeignKey("itineraries.id", ondelete="SET NULL"), nullable=True
