@@ -12,7 +12,6 @@ class ItineraryTemplateDay(BaseModel):
 
 class ProductCreate(BaseModel):
     name: str
-    origin: Optional[str] = None
     destination: str
     days: int
     price: float
@@ -28,7 +27,6 @@ class ProductCreate(BaseModel):
 
 class ProductUpdate(BaseModel):
     name: Optional[str] = None
-    origin: Optional[str] = None
     destination: Optional[str] = None
     days: Optional[int] = None
     price: Optional[float] = None
@@ -45,7 +43,6 @@ class ProductUpdate(BaseModel):
 class ProductOut(BaseModel):
     id: int
     name: str
-    origin: Optional[str]
     destination: str
     days: int
     price: float

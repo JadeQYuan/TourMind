@@ -7,7 +7,6 @@
 |-------------------|--------------|---------|----------------------------------|
 | id                | 产品ID        | int     | 主键，自增                        |
 | name              | 产品名称      | string  | 必填，1-200 字符                  |
-| origin            | 出发地        | string  | 可选，1-100 字符                  |
 | destination       | 目的地        | string  | 必填，1-200 字符                  |
 | days              | 天数          | int     | 必填，1-365，决定行程模板天数      |
 | price             | 价格          | number  | 必填，单位：元，精度2位            |
@@ -23,7 +22,11 @@
 | created_at        | 创建时间      | string  | 创建时间，ISO8601                  |
 | updated_at        | 更新时间      | string  | 更新时间，ISO8601                  |
 
-> itinerary_template 字段为 JSON 数组，每条包含：seq（天序号，int）、details（行程内容，string，可空）、accommodation_area（住宿区域，string，可空）、notes（备注，string，可空）。
+> itinerary_template 字段为 JSON 数组，每条包含：
+> - seq（天序号，int）
+> - details（行程内容，string，可空）
+> - accommodation_area（住宿区域，string，可空）
+> - notes（备注，string，可空）
 
 ## Requirements
 
@@ -45,7 +48,7 @@
 
 
 ### Requirement: 新增/编辑产品
-系统 SHALL 支持通过表单新增产品和编辑产品信息，表单字段包括：名称、出发地、目的地、天数、价格、费用包含、费用不含、取消政策、出行提示、重要提示、行程模板、备注、状态。
+系统 SHALL 支持通过表单新增产品和编辑产品信息，表单字段包括：名称、目的地、天数、价格、费用包含、费用不含、取消政策、出行提示、重要提示、行程模板、备注、状态。
 
 #### Scenario: 新建产品表单校验
 - **WHEN** 用户点击“新增产品”并填写表单后提交

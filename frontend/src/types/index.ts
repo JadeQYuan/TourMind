@@ -47,7 +47,6 @@ export interface ProductTemplateDay {
 export interface Product {
   id: number
   name: string
-  origin: string | null
   destination: string
   days: number
   price: number

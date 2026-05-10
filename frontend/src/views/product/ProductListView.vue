@@ -315,11 +315,10 @@ const columns = [
         <template v-if="drawerViewData">
           <a-descriptions :column="1" bordered size="small" style="margin-bottom:16px">
             <a-descriptions-item label="产品名称">{{ drawerViewData.name }}</a-descriptions-item>
-            <a-descriptions-item label="出发地">{{ drawerViewData.origin ?? '-' }}</a-descriptions-item>
             <a-descriptions-item label="目的地">{{ drawerViewData.destination }}</a-descriptions-item>
             <a-descriptions-item label="天数">{{ drawerViewData.days }} 天</a-descriptions-item>
             <a-descriptions-item label="价格">
-              {{ drawerViewData.price != null ? `¥${Number(drawerViewData.price).toLocaleString()}` : '-' }}
+              {{ drawerViewData.price != null ? '¥' + Number(drawerViewData.price).toLocaleString() : '-' }}
             </a-descriptions-item>
             <a-descriptions-item label="状态">
               <a-tag :color="drawerViewData.status === 'enabled' ? 'green' : 'default'">{{ drawerViewData.status === 'enabled' ? '启用' : '禁用' }}</a-tag>
@@ -363,25 +362,18 @@ const columns = [
             </a-form-item>
           </a-col>
           <a-col :span="isMobile ? 24 : 12">
-            <a-form-item label="出发地">
-              <a-input v-model:value="form.origin" placeholder="如：北京" />
-            </a-form-item>
-          </a-col>
-        </a-row>
-        <a-row :gutter="12">
-          <a-col :span="isMobile ? 24 : 12">
             <a-form-item label="目的地" required>
               <a-input v-model:value="form.destination" placeholder="如：桂林" />
             </a-form-item>
           </a-col>
+        </a-row>
+        <a-row :gutter="12">
           <a-col :span="isMobile ? 24 : 12">
             <a-form-item label="天数" required>
               <a-input-number v-model:value="form.days" :min="1" :max="365" style="width:100%" />
             </a-form-item>
           </a-col>
-        </a-row>
-        <a-row :gutter="12">
-          <a-col :span="isMobile ? 24 : 24">
+          <a-col :span="isMobile ? 24 : 12">
             <a-form-item label="价格（元）" required>
               <a-input-number v-model:value="form.price" :min="0" :precision="2" style="width:100%" />
             </a-form-item>

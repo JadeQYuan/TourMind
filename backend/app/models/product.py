@@ -9,7 +9,6 @@ class Product(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(200), nullable=False)
-    origin: Mapped[str | None] = mapped_column(String(100), nullable=True)
     destination: Mapped[str] = mapped_column(String(200), nullable=False)
     days: Mapped[int] = mapped_column(SmallInteger, nullable=False)
     price: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)

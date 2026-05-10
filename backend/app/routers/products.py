@@ -71,7 +71,6 @@ async def copy_product(product_id: int, db: DBDep, user: CurrentUser):
         raise HTTPException(status_code=404, detail="产品不存在")
     new_product = Product(
         name=f"{src.name}（复制）",
-        origin=src.origin,
         destination=src.destination,
         days=src.days,
         price=src.price,
