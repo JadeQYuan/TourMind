@@ -16,8 +16,8 @@ router = APIRouter()
 
 @router.get("", response_model=ResponseModel[List[ItineraryListItem]])
 async def list_itineraries(
-    db: AsyncSession = Depends(DBDep),
-    current_user: CurrentUser = Depends(CurrentUser),
+    db: DBDep,
+    current_user: CurrentUser,
 ):
     result = await db.execute(
         select(Itinerary).where(Itinerary.created_by == current_user.id)
@@ -29,8 +29,8 @@ async def list_itineraries(
 @router.get("/{itinerary_id}", response_model=ResponseModel[ItineraryListItem])
 async def get_itinerary(
     itinerary_id: int,
-    db: AsyncSession = Depends(DBDep),
-    current_user: CurrentUser = Depends(CurrentUser),
+    db: DBDep,
+    current_user: CurrentUser,
 ):
     result = await db.execute(
         select(Itinerary).where(
@@ -50,8 +50,8 @@ async def get_itinerary(
 @router.post("", response_model=ResponseModel[ItineraryListItem])
 async def create_itinerary(
     data: ItineraryCreate,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    db: DBDep,
+    current_user: CurrentUser,
 ):
     # 转换details为可JSON序列化的字典
     details_data = None
@@ -83,8 +83,8 @@ async def create_itinerary(
 async def update_itinerary(
     itinerary_id: int,
     data: ItineraryUpdate,
-    db: AsyncSession = Depends(DBDep),
-    current_user: CurrentUser = Depends(CurrentUser),
+    db: DBDep,
+    current_user: CurrentUser,
 ):
     result = await db.execute(
         select(Itinerary).where(
@@ -126,8 +126,8 @@ async def update_itinerary(
 @router.delete("/{itinerary_id}", response_model=ResponseModel)
 async def delete_itinerary(
     itinerary_id: int,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    db: DBDep,
+    current_user: CurrentUser,
 ):
     result = await db.execute(
         select(Itinerary).where(
@@ -149,8 +149,8 @@ async def delete_itinerary(
 @router.post("/{itinerary_id}/share", response_model=ResponseModel[dict])
 async def generate_share_token(
     itinerary_id: int,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    db: DBDep,
+    current_user: CurrentUser,
 ):
     result = await db.execute(
         select(Itinerary).where(
@@ -173,7 +173,7 @@ async def generate_share_token(
 @router.get("/share/{token}", response_model=ResponseModel[ItineraryListItem])
 async def get_shared_itinerary(
     token: str,
-    db: AsyncSession = Depends(DBDep),
+    db: DBDep,
 ):
     result = await db.execute(
         select(Itinerary).where(Itinerary.share_token == token)
@@ -183,5 +183,27 @@ async def get_shared_itinerary(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Itinerary not found",
+        )
+    return ResponseModel(data=itinerary)
+
+
+# ── 外部端点（无需登录）─────────────────────────────────────────
+
+public_router = APIRouter(prefix="/public/itineraries", tags=["行程分享（外部）"])
+
+
+@public_router.get("/{token}", response_model=ResponseModel[ItineraryListItem])
+async def get_public_itinerary(
+    token: str,
+    db: DBDep,
+):
+    result = await db.execute(
+        select(Itinerary).where(Itinerary.share_token == token)
+    )
+    itinerary = result.scalar_one_or_none()
+    if not itinerary:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="分享链接无效或已过期",
         )
     return ResponseModel(data=itinerary)

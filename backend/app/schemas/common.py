@@ -1,11 +1,14 @@
 from pydantic import BaseModel
-from typing import Any
+from typing import Any, Generic, TypeVar
 
 
-class ResponseModel(BaseModel):
+T = TypeVar('T')
+
+
+class ResponseModel(BaseModel, Generic[T]):
     code: int = 0
     message: str = "success"
-    data: Any = None
+    data: T | None = None
 
 
 class PageMeta(BaseModel):
@@ -14,8 +17,8 @@ class PageMeta(BaseModel):
     page_size: int
 
 
-class PagedResponse(BaseModel):
+class PagedResponse(BaseModel, Generic[T]):
     code: int = 0
     message: str = "success"
-    data: Any = None
+    data: T | None = None
     meta: PageMeta | None = None

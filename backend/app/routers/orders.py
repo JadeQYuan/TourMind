@@ -33,10 +33,12 @@ async def _gen_order_no(db) -> str:
 async def list_orders(
     db: DBDep,
     _: CurrentUser,
-    status: str | None = None,
-    keyword: str | None = None,
-    start_date: date | None = None,
-    end_date: date | None = None,
+    status: str | None = Query(None),
+    keyword: str | None = Query(None),
+    supplier_id: int | None = Query(None),
+    product_id: int | None = Query(None),
+    start_date: date | None = Query(None),
+    end_date: date | None = Query(None),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
 ):
@@ -44,16 +46,20 @@ async def list_orders(
         joinedload(Order.product),
         joinedload(Order.supplier),
     )
-    if status:
-        stmt = stmt.where(Order.status == status)
-    if keyword:
-        kw = f"%{keyword}%"
+    if status and status.strip():
+        stmt = stmt.where(Order.status == status.strip())
+    if keyword and keyword.strip():
+        kw = f"%{keyword.strip()}%"
         stmt = stmt.where(
             or_(
                 Order.customer_name.ilike(kw),
                 Order.order_no.ilike(kw),
             )
         )
+    if supplier_id:
+        stmt = stmt.where(Order.supplier_id == supplier_id)
+    if product_id:
+        stmt = stmt.where(Order.product_id == product_id)
     if start_date:
         stmt = stmt.where(Order.travel_date >= start_date)
     if end_date:
