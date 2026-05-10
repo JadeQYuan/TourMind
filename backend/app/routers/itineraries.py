@@ -3,17 +3,10 @@ from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
-from app.core.dependencies import get_db, get_current_user
-from app.core.security import User
+from app.core.deps import DBDep, CurrentUser, require_roles
 from app.models import Itinerary
-from app.schemas import (
-    Itinerary as ItinerarySchema,
-    ItineraryCreate,
-    ItineraryUpdate,
-    ItineraryListItem,
-    ResponseModel,
-)
+from app.schemas.itinerary import ItineraryCreate, ItineraryUpdate, ItineraryListItem
+from app.schemas.common import ResponseModel
 from datetime import datetime
 import secrets
 
@@ -23,8 +16,8 @@ router = APIRouter()
 
 @router.get("", response_model=ResponseModel[List[ItineraryListItem]])
 async def list_itineraries(
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(DBDep),
+    current_user: CurrentUser = Depends(CurrentUser),
 ):
     result = await db.execute(
         select(Itinerary).where(Itinerary.created_by == current_user.id)
@@ -33,11 +26,11 @@ async def list_itineraries(
     return ResponseModel(data=itineraries)
 
 
-@router.get("/{itinerary_id}", response_model=ResponseModel[ItinerarySchema])
+@router.get("/{itinerary_id}", response_model=ResponseModel[ItineraryListItem])
 async def get_itinerary(
     itinerary_id: int,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(DBDep),
+    current_user: CurrentUser = Depends(CurrentUser),
 ):
     result = await db.execute(
         select(Itinerary).where(
@@ -54,7 +47,7 @@ async def get_itinerary(
     return ResponseModel(data=itinerary)
 
 
-@router.post("", response_model=ResponseModel[ItinerarySchema])
+@router.post("", response_model=ResponseModel[ItineraryListItem])
 async def create_itinerary(
     data: ItineraryCreate,
     db: AsyncSession = Depends(get_db),
@@ -86,12 +79,12 @@ async def create_itinerary(
     return ResponseModel(data=itinerary)
 
 
-@router.put("/{itinerary_id}", response_model=ResponseModel[ItinerarySchema])
+@router.put("/{itinerary_id}", response_model=ResponseModel[ItineraryListItem])
 async def update_itinerary(
     itinerary_id: int,
     data: ItineraryUpdate,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(DBDep),
+    current_user: CurrentUser = Depends(CurrentUser),
 ):
     result = await db.execute(
         select(Itinerary).where(
@@ -177,10 +170,10 @@ async def generate_share_token(
     return ResponseModel(data={"share_token": itinerary.share_token})
 
 
-@router.get("/share/{token}", response_model=ResponseModel[ItinerarySchema])
+@router.get("/share/{token}", response_model=ResponseModel[ItineraryListItem])
 async def get_shared_itinerary(
     token: str,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(DBDep),
 ):
     result = await db.execute(
         select(Itinerary).where(Itinerary.share_token == token)

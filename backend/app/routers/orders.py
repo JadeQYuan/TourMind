@@ -75,7 +75,12 @@ async def list_orders(
 
 @router.get("/{order_id}", response_model=ResponseModel)
 async def get_order(order_id: int, db: DBDep, _: CurrentUser):
-    result = await db.execute(select(Order).where(Order.id == order_id))
+    result = await db.execute(
+        select(Order).options(
+            joinedload(Order.product),
+            joinedload(Order.supplier),
+        ).where(Order.id == order_id)
+    )
     order = result.scalar_one_or_none()
     if not order:
         raise HTTPException(status_code=404, detail="订单不存在")
